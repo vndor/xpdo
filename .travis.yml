@@ -11,6 +11,6 @@ install:
     - composer install
 script: 
     - wget -O phpunit.phar https://phar.phpunit.de/phpunit-5.phar
-    - php phpunit.phar -c phpunit.xml --bootstrap bootstrap_autoload_mysql.php .
+    - php phpunit.phar -c tests/phpunit.xml --bootstrap tests/bootstrap_autoload_mysql.php tests
 notifications:
     email: false
