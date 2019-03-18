@@ -5,6 +5,7 @@ sudo: required
 language: php
 php:
     - '5.6'
+    - '7.1'
 services:
     - mysql
 install:
@@ -12,5 +13,6 @@ install:
 script: 
     - wget -O phpunit.phar https://phar.phpunit.de/phpunit-5.phar
     - php phpunit.phar -c tests/phpunit.xml --bootstrap tests/bootstrap_autoload_mysql.php tests
+    - php phpunit.phar -c tests/phpunit.xml --bootstrap tests/bootstrap_autoload.php tests
 notifications:
     email: false
