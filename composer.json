@@ -1,0 +1,21 @@
+{
+	"name": "aphp/xpdo",
+	"description": "Simple PHP PDO Wrapper for MySQL, for SQLite. ORM (Object Relational Mapping) supported for keys fields.",
+	"keywords": [ 
+		"PHP", "pdo", "mysql", "sqlite", "ormlite", "orm", "orm-library", "flyweight", "simple", "database"
+	],
+	"type": "php",
+	"license": "MIT",
+	"minimum-stability": "dev",
+	"require": {
+		"aphp/logger": "~1.0"
+	},
+	"autoload": {
+		"psr-4": {
+			"aphp\\XPDO\\" : "src/"
+		},
+		"files": [
+			"src/Exceptions.php"
+		]
+	}
+}

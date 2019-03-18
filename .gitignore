@@ -1,0 +1,4 @@
+sh.exe.stackdump
+vendor
+composer.lock
+*temp.sqlite
