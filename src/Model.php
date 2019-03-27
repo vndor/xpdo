@@ -31,8 +31,8 @@ abstract class ModelH {
 	abstract static function loadWithStatement(Statement $statement) { } // Model or null , 
 	abstract static function loadAllWithStatement(Statement $statement) { }  // [ Model ] or null
 
-	abstract static function loadWithField( $field, $value, $newModel = false, $fields = [] ) { } // Model or null
-	abstract static function loadWithId( $value, $newModel = false, $fields = [] ) { } // Model or null
+	abstract static function loadWithField( $field, $value, $fields = [],  $newModel = false ) { } // Model or null
+	abstract static function loadWithId( $value, $fields = [],  $newModel = false ) { } // Model or null
 	*/
 
 	// PUBLIC
@@ -55,8 +55,8 @@ class Model extends ModelH {
 
 	private static function statementWithWhereQuery($SQLWhere, $params,  $fields) { // Statement
 		$db = Database::getInstance();
-		$select = Utils::selectFields($fields);
-		$table = Utils::quoteFields( static::tableName() );
+		$select = Utils::selectColumns($fields);
+		$table = Utils::quoteColumns( static::tableName() );
 		$statement = $db->prepare( "SELECT $select FROM $table WHERE $SQLWhere" );
 		if (count($params) > 0) {
 			if (strpos($statement->_query, '?') !== false) {
@@ -74,10 +74,10 @@ class Model extends ModelH {
 			if (!isset(self::$_fields[$class])) {
 				$db = Database::getInstance();
 				if ($db->isSQLite()) {
-					self::$_fields[$class] = Utils::SQLite_tableFields( $db->getPDO(), static::tableName() );
+					self::$_fields[$class] = Utils::SQLite_tableColumns( $db->getPDO(), static::tableName() );
 				}
 				if ($db->isMYSQL()) {
-					self::$_fields[$class] = Utils::MYSQL_tableFields( $db->getPDO(), static::tableName() );
+					self::$_fields[$class] = Utils::MYSQL_tableColumns( $db->getPDO(), static::tableName() );
 				}
 			}
 			return self::$_fields[$class];
@@ -136,8 +136,8 @@ class Model extends ModelH {
 		return $statement->fetchAllObjects( get_called_class() , [ self::LOADED_WITH_DB ]);
 	}
 
-	static function loadWithField( $field, $value, $newModel = false, $fields = [] ) { // Model or null
-		$SQLWhere = Utils::quoteFields($field) . ' = ?';
+	static function loadWithField( $field, $value, $fields = [],  $newModel = false ) { // Model or null
+		$SQLWhere = Utils::quoteColumns($field) . ' = ?';
 		$model = static::loadWithWhereQuery($SQLWhere, [ $value ], $fields);
 		if ($model == null && $newModel) {
 			$model = static::newModel();
@@ -146,11 +146,11 @@ class Model extends ModelH {
 		return $model;
 	}
 
-	static function loadWithId( $value, $newModel = false, $fields = [] ) { // Model or null
+	static function loadWithId( $value, $fields = [],  $newModel = false ) { // Model or null
 		if (static::keyField() == null) {
 			return null;
 		}
-		return static::loadWithField( static::keyField(), $value, $newModel, $fields );
+		return static::loadWithField( static::keyField(), $value, $fields, $newModel );
 	}
 
 	// PUBLIC
@@ -175,8 +175,8 @@ class Model extends ModelH {
 		if ($keyField == null) {
 			return false;
 		}
-		$table = Utils::quoteFields( static::tableName() );
-		$where = Utils::quoteFields(static::keyField()) . ' = :keyvalue'; 
+		$table = Utils::quoteColumns( static::tableName() );
+		$where = Utils::quoteColumns(static::keyField()) . ' = :keyvalue'; 
 		$query = "DELETE FROM $table WHERE $where";
 		$db = Database::getInstance();
 		$db->prepare($query)
@@ -201,13 +201,13 @@ class Model extends ModelH {
 				continue; // existing keyfield is cannot be overridden
 			}
 			$param = 'param' . $i;
-			$set[] = Utils::quoteFields($column) . ' = :' . $param;
+			$set[] = Utils::quoteColumns($column) . ' = :' . $param;
 			$params[$param] = $this->{ $column };
 			$i++;
 		}
-		$where = Utils::quoteFields($keyField) . ' = :keyvalue';
+		$where = Utils::quoteColumns($keyField) . ' = :keyvalue';
 		$params['keyvalue'] = $this->{ $keyField };
-		$table = Utils::quoteFields( static::tableName() );
+		$table = Utils::quoteColumns( static::tableName() );
 		$setStr = implode(', ', $set);
 		$query = "UPDATE $table SET $setStr WHERE $where";
 		$db->prepare($query)
@@ -218,7 +218,7 @@ class Model extends ModelH {
 	protected function save_insert(&$fields) {
 		$db = Database::$instance;
 		
-		$table = Utils::quoteFields( static::tableName() );
+		$table = Utils::quoteColumns( static::tableName() );
 		$keyField = static::keyField();
 		$keyFieldAutoIncrement = static::keyFieldAutoIncrement();
 		$values = [];
@@ -235,7 +235,7 @@ class Model extends ModelH {
 			$params[$param] = $this->{ $column };
 			$i++;
 		}
-		$columns = Utils::selectFields($columns);
+		$columns = Utils::selectColumns($columns);
 		$valuesStr = implode(', ', $values);
 		$query = "INSERT INTO $table ( $columns ) VALUES ( $valuesStr )";
 		$db->prepare($query)

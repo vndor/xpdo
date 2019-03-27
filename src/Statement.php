@@ -18,15 +18,15 @@ abstract class StatementH {
 
 	abstract public function execute(); // Statement
 
-	abstract public function fetchAll(); // array[row][field] OR null
-	abstract public function fetchLine(); // array[field] OR null
+	abstract public function fetchAll(); // array[row][column] OR null
+	abstract public function fetchLine(); // array[column] OR null
 	abstract public function fetchOne(); // value OR null
-	abstract public function fetchLastId($table, $idField); // value OR null
+	abstract public function fetchLastId($table, $idColumn); // value OR null
 
 	// Blob interface
 	abstract public function bindNamedBlob($name, &$blob); // Statement
 	abstract public function bindNamedBlobAsFilename($name, $filename); // Statement
-	abstract public function fetchBlob($fieldName, &$blob); // true OR false
+	abstract public function fetchBlob($columnName, &$blob); // true OR false
 
 	// Object Interface
 	abstract public function fetchObject($className, $constructorParams = null); // object OR null
@@ -110,8 +110,8 @@ class Statement extends StatementH {
 		return null;
 	}
 
-	public function fetchLastId($table, $idField) {
-		return $this->_database->fetchLastId($table, $idField);
+	public function fetchLastId($table, $idColumn) {
+		return $this->_database->fetchLastId($table, $idColumn);
 	}
 
 	// Blob interface
@@ -128,9 +128,9 @@ class Statement extends StatementH {
 		$this->bindNamedBlob($name, $fp);
 	}
 
-	public function fetchBlob($fieldName, &$blob) { // true OR false
+	public function fetchBlob($columnName, &$blob) { // true OR false
 		$this->execute();
-		$this->_pdoStatement->bindColumn($fieldName, $blob, \PDO::PARAM_LOB);
+		$this->_pdoStatement->bindColumn($columnName, $blob, \PDO::PARAM_LOB);
 		return $this->_pdoStatement->fetch(\PDO::FETCH_BOUND);
 	}
 

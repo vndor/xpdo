@@ -3,10 +3,10 @@
 namespace aphp\XPDO;
 
 /*
-Utils::quoteFields($fieldOrFields)
-Utils::selectFields($fields)
-Utils::SQLite_tableFields(\PDO $pdo, $table)
-Utils::MYSQL_tableFields(\PDO $pdo, $table)
+Utils::quoteColumns($columnOrColumns)
+Utils::selectColumns($columns)
+Utils::SQLite_tableColumns(\PDO $pdo, $table)
+Utils::MYSQL_tableColumns(\PDO $pdo, $table)
 */
 
 class Utils {
@@ -14,57 +14,57 @@ class Utils {
 	const QUOTE = '`';
 
 	// STATIC
-	static function quoteFields($fieldOrFields) {
-		if (is_array($fieldOrFields)) {
-			$fields = [];
-			foreach ($fieldOrFields as $val) {
+	static function quoteColumns($columnOrColumns) {
+		if (is_array($columnOrColumns)) {
+			$columns = [];
+			foreach ($columnOrColumns as $val) {
 				if (substr($val,0,1) != self::QUOTE) {
-					$fields[] = self::QUOTE . $val . self::QUOTE;
+					$columns[] = self::QUOTE . $val . self::QUOTE;
 				} else {
-					$fields[] = $val;
+					$columns[] = $val;
 				}
 			}
-			return $fields;
-		} elseif (substr($fieldOrFields,0,1) != self::QUOTE) {
-			return self::QUOTE . $fieldOrFields . self::QUOTE;
+			return $columns;
+		} elseif (substr($columnOrColumns,0,1) != self::QUOTE) {
+			return self::QUOTE . $columnOrColumns . self::QUOTE;
 		}
-		return $fieldOrFields;
+		return $columnOrColumns;
 	}
 
-	static function selectFields($fields) { // $fields = array
-		if (count($fields) > 0) {
-			$fields = self::quoteFields($fields);
-			return implode(', ', $fields);
+	static function selectColumns($columns) { // $columns = array
+		if (count($columns) > 0) {
+			$columns = self::quoteColumns($columns);
+			return implode(', ', $columns);
 		}
 		return '*';
 	}
 
-	static function SQLite_tableFields(\PDO $pdo, $table) {
+	static function SQLite_tableColumns(\PDO $pdo, $table) {
 		$s = $pdo->prepare("PRAGMA table_info( '$table' )");
 		$s->execute();
 		$array = $s->fetchAll(\PDO::FETCH_ASSOC); // cid, name ....
 		if (is_array($array)) {
-			$fields = [];
+			$columns = [];
 			foreach ($array as $values) {
-				$fields[] = $values['name'];
+				$columns[] = $values['name'];
 			}
-			return $fields;
+			return $columns;
 		}
-		throw Utils_Exception::tableFields($table);
+		throw Utils_Exception::tableColumns($table);
 	}
 
-	static function MYSQL_tableFields(\PDO $pdo, $table) {
+	static function MYSQL_tableColumns(\PDO $pdo, $table) {
 		$s = $pdo->prepare("DESC `$table`");
 		$s->execute();
 		$array = $s->fetchAll(\PDO::FETCH_ASSOC); // Field, Type ..
 		if (is_array($array)) {
-			$fields = [];
+			$columns = [];
 			foreach ($array as $values) {
-				$fields[] = $values['Field'];
+				$columns[] = $values['Field'];
 			}
-			return $fields;
+			return $columns;
 		}
-		throw Utils_Exception::tableFields($table);
+		throw Utils_Exception::tableColumns($table);
 	}
 
 	static function interpolateQuery($query, $params) {

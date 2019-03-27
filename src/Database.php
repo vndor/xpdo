@@ -12,7 +12,7 @@ abstract class DataBaseH {
 
 	abstract public function prepare($queryString); // aphp\XPDO\Statement; 
 	abstract public function exec($queryString); // int
-	abstract public function fetchLastId($table, $idField); // value OR null ??
+	abstract public function fetchLastId($table, $idColumn); // value OR null ??
 
 	abstract public function isMYSQL();
 	abstract public function isSQLite();
@@ -62,9 +62,9 @@ class DataBase extends DataBaseH {
 		return $pdo->exec($queryString);
 	}
 
-	public function fetchLastId($table, $idField) {
-		$id    = Utils::quoteFields($idField);
-		$table = Utils::quoteFields($table);
+	public function fetchLastId($table, $idColumn) {
+		$id    = Utils::quoteColumns($idColumn);
+		$table = Utils::quoteColumns($table);
 		$statement = $this->prepare("SELECT $id FROM $table ORDER BY $id DESC LIMIT 1");
 		return $statement->fetchOne();
 	}

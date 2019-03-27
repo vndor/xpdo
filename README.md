@@ -4,13 +4,13 @@
 ![PHP Support](https://img.shields.io/badge/php%20tested-7.1-brightgreen.svg)
 ![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Travis](https://api.travis-ci.org/travis-ci/travis-web.svg?branch=master)
+![Travis](https://api.travis-ci.org/GonistLelatel/xpdo.svg?branch=master)
 
 ## Introduction
 
-`XPDO` is a ... for PHP.
+`XPDO` - Simple PDO wrapper and object mapper with prepared statements.
 
-`XPDO` is the fast ... for PHP.
+Supporting: MySQL, SQLite.
 
 ## Installation
 PHP5.6 , PHP7.0+
@@ -19,21 +19,369 @@ PHP5.6 , PHP7.0+
 
 ## Hello world
 
-Example code for quick start
+Sample code to quick starting
 
+```php
+<?php 
+require 'vendor/autoload.php';
+
+use aphp\XPDO\Database;
+use aphp\XPDO\Model;
+
+class user extends Model {
+	/* uncomment this to get more options
+	static function tableName() {
+		return 'user'; // table custom name
+	}
+	static function keyField() {
+		return 'id'; // keyField custom name
+	}
+	static function keyFieldAutoIncrement() {
+		return true; // false if auto increment is not used
+	}
+	*/
+	// class name == 'user' == default configuration, className is equal tableName
+	// keyField == 'id' - default configuration
+	// keyFieldAutoIncrement = true - default configuration
+}
+
+$db = Database::getInstance();
+$db->SQLiteInit('sampleBase.sqlite');
+
+$user = user::newModel();
+
+$user->name = 'user ' . time();
+$user->save(); // insert
+
+// read user from database
+$user2 = user::loadWithId( $user->id );
+print_r($user2);
+```
+Result
+```
+user Object
+(
+    [id] => 2
+    [name] => user 1552874005
+    [email] =>
+    [gender] =>
+    [age] =>
+    [binary] =>
+    [_model_isLoadedWithDB] => 1
+    [_model_isDeleted:protected] =>
+)
+```
 ## Features
 
-* It is fast.
-* ....
-* ....
-* ....
-* ....
+* MYSQL, SQLite support.
+* Prepared statement syntax for queries.
+* Params values binding.
+* Syntax like PDO.
+* PSR logger support to debug queries.
+* Model like ORM.
 
 ## Syntax
 
-Code syntax documentation
+**[Database](#Database)**<br>
+**[Statement](#Statement)**<br>
+**[Model](#Model)**<br>
 
+### Database
+Initialization
+
+```php
+use aphp\XPDO\Database;
+
+$db = Database::getInstance();
+$db->SQLiteInit('sampleBase-temp.sqlite');
+// --
+$db->MySQLInit($user, $password, $database, 'localhost');
+```
+
+Logger
+```php
+use aphp\logger\FileLogger;
+
+$logger = FileLogger::getInstance();
+$logger->configure('logs/log');
+$logger->startLog();
+
+$db->setLogger( $logger );
+```
+
+**[Database](#Database)**<br>
+**[Statement](#Statement)**<br>
+**[Model](#Model)**<br>
+
+### Statement
+Prepare
+```php
+use aphp\XPDO\Database;
+
+$db = Database::getInstance();
+$statement1 = $db->prepare("SELECT `name` FROM user WHERE id = ?");
+$statement2 = $db->prepare("SELECT `name` FROM user WHERE id = :idvalue");
+```
+Bind values
+```php
+$statement1->bindValues( [ 1 ] );
+
+$statement2->bindNamedValue( 'idvalue', 1 );
+$statement2->bindNamedValues( [ 'idvalue' => 1 ] );
+```
+Execute
+```php
+$statement1->execute(); // for UPDATE or INSERT queries
+```
+Prepare-Bind-Execute
+```php
+use aphp\XPDO\Database;
+
+$db = Database::getInstance();
+$db->prepare("INSERT INTO user ( `name`, `email`, `gender`, `age` ) VALUES ( :name, 'email2', 2, 1.5 )")
+   ->bindNamedValue( 'name', 'Donella Nelson' )
+   ->execute();
+```
+Fetch all - select all rows
+```php
+$result = $db->prepare("SELECT * FROM user")->fetchAll();
+print_r($result); // array[row][field]
+```
+Fetch line - select first row
+```php
+$result = $db->prepare("SELECT * FROM user")->fetchLine();
+print_r($result); // array[field]
+```
+Fetch One - select first value in first row
+```php
+$result = $db->prepare("SELECT * FROM user")->fetchOne();
+print_r($result); // value
+```
+### Statement-Empty
+If fetch results is empty, that can be checked by `IF` operator
+```php
+$result = $db->prepare("SELECT * FROM user WHERE id = 2304")->fetchAll();
+if ($result) {
+	print_r($result); // array[row][field]
+} else {
+	var_dump($result); // NULL
+}
+
+// one line syntax example
+if ($result = $db->prepare("SELECT * FROM user WHERE id = 2304")->fetchAll()) {
+	print_r($result); // array[row][field]
+} else {
+	var_dump($result); // NULL
+}
+```
+Empty fetch line  
+```php
+if ($result = $db->prepare("SELECT * FROM user WHERE id = 2304")->fetchLine()) {
+	print_r($result); // array[field]
+} else {
+	var_dump($result); // NULL
+}
+```
+Empty fetch one
+```php
+if ($result = $db->prepare("SELECT * FROM user WHERE id = 2304")->fetchOne()) {
+	print_r($result); // value
+} else {
+	var_dump($result); // NULL
+}
+```
+### Statement-Blob
+https://secure.php.net/manual/en/pdo.lobs.php
+
+Bind blob param from file
+```php
+$statement = $db->prepare("UPDATE user SET `binary` = :blob WHERE id = :id");
+$statement->bindNamedBlobAsFilename('blob', 'pathToFile/filename.jpg');
+$statement->bindNamedValue('id', 2);
+$statement->execute();
+```
+Bind blob param from value
+```php
+$fp = fopen($filename, 'rb'); // read file
+if ($fp === false) {
+	throw new Exception($filename);
+}
+$statement = $db->prepare("UPDATE user SET `binary` = :blob WHERE id = :id");
+$statement->bindNamedBlob('blob', $fp);
+$statement->bindNamedValue('id', 2);
+$statement->execute();
+```
+### Statement-Object
+
+Fetch object 
+
+```php
+class User_object {
+	public $id;
+	public $name;
+	public $email;
+	public $param1_v;
+	public $param2_v;
+
+	function __construct($param1, $param2) {
+		$this->param1_v = $param1;
+		$this->param2_v = $param2;
+	}
+}
+
+$db = Database::getInstance();
+$statement = $db->prepare("SELECT `id`, `name`, `email` FROM user WHERE id = 1");
+$obj = $statement->fetchObject(User_object::class, [ 'p1', 'p2' ]);
+
+print_r($obj);
+```
+```
+User_object Object
+(
+    [id] => 1
+    [name] => user1
+    [email] => email1
+    [param1_v] => p1
+    [param2_v] => p2
+)
+```
+
+Fetch All object
+
+```php
+$statement = $db->prepare("SELECT `id`, `name`, `email` FROM user");
+$objects = $statement->fetchAllObjects(User_object::class, [ 'p1', 'p2' ]);
+
+print_r($objects);
+// $objects = array [objects]
+```
+
+**[Database](#Database)**<br>
+**[Statement](#Statement)**<br>
+**[Model](#Model)**<br>
+
+### Model
+
+new Model
+
+```php
+use aphp\XPDO\Database;
+use aphp\XPDO\Model;
+
+class user extends Model {
+	
+}
+
+
+$user = user::newModel();
+```
+
+new Model - visible fields
+```php
+class user extends Model {
+	public $id;
+	public $name;
+	public $email;
+	public $gender;
+	public $age;
+	public $binary;
+}
+
+$user = user::newModel();
+```
+new Model - key field
+```php
+class user extends Model {
+	static function keyField() {
+		return 'id';
+	}
+}
+
+$user = user::newModel();
+```
+new Model - table name
+```php
+class user extends Model {
+	static function tableName() {
+		return 'user';
+	}
+}
+
+$user = user::newModel();
+```
+new Model - key field auto increment
+```php
+class user extends Model {
+	static function keyFieldAutoIncrement() {
+		return true;
+	}
+}
+
+$user = user::newModel();
+```
+### Model - Save
+The insert query performs automatically.
+
+```php
+use aphp\XPDO\Database;
+use aphp\XPDO\Model;
+
+class user extends Model {
+	
+}
+
+$user = user::newModel();
+$user->name = 'Loguyyo Vielyra';
+$user->email = 'Vielyra@mail.com';
+
+$user->save();
+```
+The update query performs automatically.
+```php
+$user->email = 'newValue@mail.com';
+$user->save();
+// for optimization use the fields param
+$user->save( ['email'] );
+```
+### Model - Load
+Load with id
+```php
+$user = user::loadWithId(1);
+```
+Load with field
+```php
+$user = user::loadWithField('name', 'userName');
+```
+Load with field and columns 'name' , 'email' (optimized)
+```php
+$user = user::loadWithField('name', 'userName', ['name', 'email']);
+```
+### Model - Select
+Using select queries for loading models 
+```php
+$statement = $db->prepare('SELECT * FROM user');
+$object = user::loadWithStatement($statement);
+print_r($object);
+```
+Load all
+```php
+$statement = $db->prepare('SELECT * FROM user');
+$objects = user::loadAllWithStatement($statement);
+print_r($objects);
+```
+### Model - Delete
+Delete model from database
+```php
+$user = user::loadWithId(1);
+$user->delete();
+```
+Delete model from database, optimizing
+```php
+$user = user::loadWithId(1, [ user::keyField() ]);
+$user->delete();
+```
 ## More features
 For more features:
 * read source code and examples
 * practice with `XPDO` in real code
+
