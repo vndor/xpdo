@@ -1,4 +1,5 @@
 <?php 
+namespace example01\wqdqwdw\asdad\adsw;
 
 require __DIR__ . '/../vendor/autoload.php';
 

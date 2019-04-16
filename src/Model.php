@@ -15,9 +15,8 @@ abstract class ModelH {
 		return true;
 	}
 	static function tableName() {
-		return get_called_class();
+		return (new \ReflectionClass(get_called_class()))->getShortName();
 	}
-
 	// STATIC
 	static $_fields = []; // [className] = [ field, field, field ]
 
