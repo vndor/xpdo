@@ -17,9 +17,9 @@ class Utils_Exception extends BaseException {
 	}
 }
 
-class DataBase_Exception extends BaseException {
+class Database_Exception extends BaseException {
 	public static function pdoIsNull() {
-		return self::createException('DataBase->_pdo = null');
+		return self::createException('Database->_pdo = null');
 	}
 }
 

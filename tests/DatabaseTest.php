@@ -136,12 +136,12 @@ class DatabaseTest extends Base_TestCase {
 
 	// Exceptions
 
-	public function test_DataBase_Exception() {
+	public function test_Database_Exception() {
 		$db = new Database;
 		try {
 			$db->prepare("SELECT `name` FROM user WHERE id = 1");
 			$this->assertTrue(false);
-		} catch (aphp\XPDO\DataBase_Exception $ex) {
+		} catch (aphp\XPDO\Database_Exception $ex) {
 			$this->assertTrue(true);
 		}
 	}

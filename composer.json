@@ -8,6 +8,10 @@
 	"license": "MIT",
 	"minimum-stability": "dev",
 	"require": {
+		"psr/log": "~1.0",
+		"aphp/foundation": "~1.0"
+	},
+	"require-dev": {
 		"aphp/logger": "~1.0"
 	},
 	"autoload": {

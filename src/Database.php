@@ -6,7 +6,7 @@ namespace aphp\XPDO;
 # Header
 # ------------------------------------
 
-abstract class DataBaseH {
+abstract class DatabaseH {
 	abstract public function SQLiteInit($fileName);
 	abstract public function MySQLInit($user, $password, $dbname, $host = 'localhost');
 
@@ -20,10 +20,10 @@ abstract class DataBaseH {
 }
 
 # ------------------------------------
-# DataBase
+# Database
 # ------------------------------------
 
-class DataBase extends DataBaseH {
+class Database extends DatabaseH {
 	use \aphp\Foundation\TraitSingleton; // trait
 	use \Psr\Log\LoggerAwareTrait; // trait
 
@@ -81,6 +81,6 @@ class DataBase extends DataBaseH {
 		if ($this->_pdo) {
 			return $this->_pdo;
 		}
-		throw DataBase_Exception::pdoIsNull();
+		throw Database_Exception::pdoIsNull();
 	}
 }
