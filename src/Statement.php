@@ -67,16 +67,15 @@ class Statement extends StatementH {
 	// --
 
 	public function execute() {
-		$result = false;
+		if ($this->logger) {
+			$query = Utils::interpolateQuery($this->_query, $this->_params);
+			$this->logger->info($query, Utils::$_logContext);
+		}
 		if (is_array($this->executeValues)) {
 			$this->_pdoStatement->execute( $this->executeValues );
 			$this->executeValues = null;
 		} else {
 			$this->_pdoStatement->execute();
-		}
-		if ($this->logger) {
-			$query = Utils::interpolateQuery($this->_query, $this->_params);
-			$this->logger->info($query, Utils::$_logContext);
 		}
 		return $this;
 	}

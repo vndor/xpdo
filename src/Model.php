@@ -37,6 +37,7 @@ abstract class ModelH {
 	// PUBLIC
 	public $_model_isLoadedWithDB = false;
 	protected $_model_isDeleted = false;
+	public $_model_loadedFields = null;
 
 	abstract public function save($fields = []);
 	abstract public function delete();
@@ -86,8 +87,9 @@ class Model extends ModelH {
 	
 	// Constructor
 
-	public function __construct($isLoadedWithDB = false) {
+	public function __construct($isLoadedWithDB = false, $_model_loadedFields = []) {
 		$this->_model_isLoadedWithDB = $isLoadedWithDB;
+		$this->_model_loadedFields = count($_model_loadedFields) == 0 ? null : $_model_loadedFields;
 	}
 
 	public function __clone() {
@@ -119,12 +121,12 @@ class Model extends ModelH {
 	static function loadWithWhereQuery($SQLWhere, $params,  $fields = []) { // Model or null
 		$SQLWhere .= ' LIMIT 1';
 		$s = self::statementWithWhereQuery($SQLWhere, $params, $fields);
-		return $s->fetchObject( get_called_class() , [ self::LOADED_WITH_DB ]);		
+		return $s->fetchObject( get_called_class() , [ self::LOADED_WITH_DB, $fields ]);		
 	}
 
 	static function loadAllWithWhereQuery($SQLWhere, $params,  $fields = []) { // [ Model ] or null
 		$statement = self::statementWithWhereQuery($SQLWhere, $params, $fields);
-		return $statement->fetchAllObjects( get_called_class() , [ self::LOADED_WITH_DB ]);
+		return $statement->fetchAllObjects( get_called_class() , [ self::LOADED_WITH_DB, $fields ]);
 	}
 
 	static function loadWithStatement(Statement $statement) { // Model or null
@@ -159,7 +161,9 @@ class Model extends ModelH {
 			// object is deleted
 			return;
 		}
-		$db = Database::getInstance();
+		if ((count($fields) == 0) && $this->_model_loadedFields) {
+			$fields = $this->_model_loadedFields;
+		}
 		$fields = static::getTableFields($fields);
 		if ($this->_model_isLoadedWithDB) {
 			$this->save_update($fields);
@@ -197,12 +201,15 @@ class Model extends ModelH {
 		}
 		foreach ($fields as $column) {
 			if ($column == $keyField) {
-				continue; // existing keyfield is cannot be overridden
+				continue; // existing key field cannot be overridden
 			}
 			$param = 'param' . $i;
 			$set[] = Utils::quoteColumns($column) . ' = :' . $param;
 			$params[$param] = $this->{ $column };
 			$i++;
+		}
+		if (count($set) == 0) {
+			throw Model_Exception::emptyUpdateFields(static::class, 'save_update');
 		}
 		$where = Utils::quoteColumns($keyField) . ' = :keyvalue';
 		$params['keyvalue'] = $this->{ $keyField };
@@ -216,7 +223,6 @@ class Model extends ModelH {
 	
 	protected function save_insert(&$fields) {
 		$db = Database::$instance;
-		
 		$table = Utils::quoteColumns( static::tableName() );
 		$keyField = static::keyField();
 		$keyFieldAutoIncrement = static::keyFieldAutoIncrement();

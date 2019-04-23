@@ -36,4 +36,7 @@ class Model_Exception extends BaseException {
 	public static function keyFieldIsNull($className) {
 		return self::createException('keyFieldIsNull: className = %s', $className);
 	}
+	public static function emptyUpdateFields($className, $method) {
+		return self::createException('update fields count = 0; className = %s; method = %s; existing key field cannot be overridden', $className, $method);
+	}
 }

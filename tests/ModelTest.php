@@ -12,6 +12,11 @@ class user extends Model {
 	public $binary;
 }
 
+/*
+name
+lastname
+*/
+
 class user_object_uniq extends Model {
 	static function tableName() {
 		return 'user_uniq';
@@ -159,5 +164,26 @@ class ModelTest extends Base_TestCase {
 		$obj->delete();
 		$obj1_read = user_object_uniq::loadWithId('obj_name1');
 		$this->assertTrue( $obj1_read === null );
+	}
+	
+	public function test_fieldsLoad() 
+	{
+		$obj = user_object_uniq::newModel();
+		$obj->name = 'test_fieldsLoad-name';
+		$obj->lastname = 'test_fieldsLoad-lastname';
+		$obj->save();
+		
+		$obj2 = user_object_uniq::loadWithId('test_fieldsLoad-name', ['name']);
+		
+		$this->assertEquals( $obj2->_model_loadedFields, ['name'] );
+		
+		$obj2->lastname = 'test_fieldsLoad-lastname 2';
+		
+		try {
+			$obj2->save();
+			$this->assertTrue( false );
+		} catch (aphp\XPDO\Model_Exception $e) {
+			$this->assertTrue( true );
+		}
 	}
 }
