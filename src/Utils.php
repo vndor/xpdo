@@ -12,6 +12,10 @@ Utils::MYSQL_tableColumns(\PDO $pdo, $table)
 class Utils {
 	// CONST
 	const QUOTE = '`';
+	static $_logContext = [
+		'traceLevel' => 10,
+		'traceTopFiles' => [ 'Statement.php', 'Database.php', 'Model.php' ]
+	];
 
 	// STATIC
 	static function quoteColumns($columnOrColumns) {

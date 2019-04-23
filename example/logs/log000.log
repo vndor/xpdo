@@ -1,8 +1,6 @@
 ----- LOG STARTED -----
-# 0:37:20 2019-03-15 [0.010] INFO Statement.php[79] INSERT INTO `user` ( `name`, `email`, `gender`, `age`, `binary` ) VALUES ( 'user 1552599440', NULL, NULL, NULL, NULL )
-# 0:37:20 2019-03-15 [0.010] INFO Statement.php[79] SELECT `id` FROM `user` ORDER BY `id` DESC LIMIT 1
-# 0:37:20 2019-03-15 [0.011] INFO Statement.php[79] SELECT * FROM `user` WHERE `id` = 2 LIMIT 1
+# 2:42:17 2019-04-23 [0.009] INFO example01.php[35] INSERT INTO `user` ( `name`, `email`, `gender`, `age`, `binary` ) VALUES ( 'user 1555976537', NULL, NULL, NULL, NULL )
+# 2:42:17 2019-04-23 [0.009] INFO example01.php[35] SELECT `id` FROM `user` ORDER BY `id` DESC LIMIT 1
+# 2:42:17 2019-04-23 [0.010] INFO example01.php[37] SELECT * FROM `user` WHERE `id` = 3 LIMIT 1
 ----- LOG STARTED -----
-# 0:37:47 2019-03-15 [0.010] INFO Statement.php[79] INSERT INTO `user` ( `name`, `email`, `gender`, `age`, `binary` ) VALUES ( 'user 1552599467', NULL, NULL, NULL, NULL )
-# 0:37:47 2019-03-15 [0.011] INFO Statement.php[79] SELECT `id` FROM `user` ORDER BY `id` DESC LIMIT 1
-# 0:37:47 2019-03-15 [0.011] INFO Statement.php[79] SELECT * FROM `user` WHERE `id` = 2 LIMIT 1
+# 2:43:53 2019-04-23 [0.003] INFO example02.php[30] SELECT `id`, `name`, `email` FROM user WHERE id = 1

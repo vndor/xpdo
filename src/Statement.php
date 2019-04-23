@@ -76,7 +76,7 @@ class Statement extends StatementH {
 		}
 		if ($this->logger) {
 			$query = Utils::interpolateQuery($this->_query, $this->_params);
-			$this->logger->info($query);
+			$this->logger->info($query, Utils::$_logContext);
 		}
 		return $this;
 	}

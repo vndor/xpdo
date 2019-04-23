@@ -3,7 +3,7 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 use aphp\XPDO\Database;
-
+use aphp\logger\FileLogger;
 
 class User_object {
 	public $id;
@@ -20,6 +20,11 @@ class User_object {
 
 $db = Database::getInstance();
 $db->SQLiteInit(__DIR__ . '/sampleBase.sqlite');
+
+$logger = FileLogger::getInstance();
+$logger->configure(__DIR__ . '/logs/log');
+$logger->startLog();
+$db->setLogger( $logger );
 
 $statement = $db->prepare("SELECT `id`, `name`, `email` FROM user WHERE id = 1");
 $obj = $statement->fetchObject(User_object::class, [ 'p1', 'p2' ]);
