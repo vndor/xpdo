@@ -52,6 +52,7 @@ class Statement extends StatementH {
 			$value = Utils::jsonEncode($value);
 			$type = $this->getPDOParamType($value);
 		}
+		// --
 		$this->_pdoStatement->bindValue($name, $value, $type);
 		if ($this->logger) {
 			$this->_params[ $name ] = $value;
@@ -67,6 +68,7 @@ class Statement extends StatementH {
 	} 
 
 	public function bindValues($params) {  // $params = array()
+		// json conversion
 		if (Utils::$_jsonBindDetection) {
 			foreach ($params as &$value) {
 				$type = $this->getPDOParamType($value);
@@ -75,6 +77,7 @@ class Statement extends StatementH {
 				}
 			}
 		}
+		// --
 		$this->executeValues = $params;
 		if ($this->logger) {
 			$this->_params = $params;
@@ -110,7 +113,9 @@ class Statement extends StatementH {
 		$this->execute();
 		$array = $this->_pdoStatement->fetchAll(\PDO::FETCH_ASSOC);
 		if (is_array($array) && count($array) > 0) {
+			// json conversion
 			$this->jsonColumnsDecode($array, 'fetchAll');
+			// ---
 			return $array;
 		}
 		return null;
@@ -120,7 +125,9 @@ class Statement extends StatementH {
 		$this->execute();
 		$array = $this->_pdoStatement->fetch(\PDO::FETCH_ASSOC);
 		if (is_array($array)) {
+			// json conversion
 			$this->jsonColumnsDecode($array, 'fetchLine');
+			// ---
 			return $array;
 		}
 		return null;
@@ -130,7 +137,9 @@ class Statement extends StatementH {
 		$this->execute();
 		$array = $this->_pdoStatement->fetch(\PDO::FETCH_NUM);
 		if (is_array($array) && count($array)>0) {
+			// json conversion
 			$this->jsonColumnsDecode($array[0], 'fetchOne');
+			// ---
 			return $array[0];
 		}
 		return null;
@@ -170,7 +179,9 @@ class Statement extends StatementH {
 			$object = $this->_pdoStatement->fetchObject($className);
 		}
 		if (is_a($object, $className)) {
+			// json conversion
 			$this->jsonColumnsDecode($object, 'fetchObject');
+			// --
 			return $object;
 		}
 		return null;
@@ -188,7 +199,9 @@ class Statement extends StatementH {
 			count($array) > 0 && 
 			is_a($array[0], $className)
 		) {
+			// json conversion
 			$this->jsonColumnsDecode($array, 'fetchAllObjects');
+			// --
 			return $array;
 		}
 		return null;

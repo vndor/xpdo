@@ -10,6 +10,9 @@ phpunit --bootstrap tests/bootstrap_autoload.php -c tests/phpunit.xml tests --de
 
 One file
 phpunit --bootstrap tests/bootstrap_autoload.php -c tests/phpunit.xml tests/%file%Test.php --debug
+
+One test
+phpunit --bootstrap tests/bootstrap_autoload.php -c tests/phpunit.xml --filter %method% tests/%file%Test.php --debug
 */
 
 require __DIR__ . '/../vendor/autoload.php';

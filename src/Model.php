@@ -11,6 +11,9 @@ abstract class ModelH {
 	static function keyField() {
 		return ModelConfig::$keyField;
 	}
+	static function jsonFields() {
+		return [];
+	}
 	static function keyFieldAutoIncrement() {
 		return true;
 	}
@@ -58,6 +61,9 @@ class Model extends ModelH {
 		$select = Utils::selectColumns($fields);
 		$table = Utils::quoteColumns( static::tableName() );
 		$statement = $db->prepare( "SELECT $select FROM $table WHERE $SQLWhere" );
+		// json conversion
+		$statement->setJSONColumns( static::jsonFields() );
+		// --
 		if (count($params) > 0) {
 			if (strpos($statement->_query, '?') !== false) {
 				$statement->bindValues($params);
@@ -130,10 +136,16 @@ class Model extends ModelH {
 	}
 
 	static function loadWithStatement(Statement $statement) { // Model or null
+		// json conversion
+		$statement->setJSONColumns( static::jsonFields() );
+		// --
 		return $statement->fetchObject( get_called_class() , [ self::LOADED_WITH_DB ]);
 	}
 
 	static function loadAllWithStatement(Statement $statement) { // [ Model ] or null
+		// json conversion
+		$statement->setJSONColumns( static::jsonFields() );
+		// --
 		return $statement->fetchAllObjects( get_called_class() , [ self::LOADED_WITH_DB ]);
 	}
 
@@ -237,6 +249,9 @@ class Model extends ModelH {
 			$param = 'param' . $i;
 			$values[] = ':' . $param;
 			$columns[] = $column;
+			if (!isset($this->{ $column })) {
+				$this->{ $column } = null;
+			}
 			$params[$param] = $this->{ $column };
 			$i++;
 		}

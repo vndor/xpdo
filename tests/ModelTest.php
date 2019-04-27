@@ -2,6 +2,7 @@
 
 use aphp\XPDO\Database;
 use aphp\XPDO\Model;
+use aphp\XPDO\Utils;
 
 class user extends Model {
 	public $id;
@@ -39,6 +40,15 @@ class user_object_nokey extends Model {
 	// dynamic properties, not implemented
 }
 
+class user_json extends Model {
+	static function tableName() {
+		return 'user';
+	}
+	static function jsonFields() {
+		return [ 'email' ];
+	}
+}
+
 // ---
 
 class ModelTest extends Base_TestCase {
@@ -50,6 +60,33 @@ class ModelTest extends Base_TestCase {
 	public static function tearDownAfterClass() {
 
 	}
+	
+	static $jsonExample = 
+'{
+    "glossary": {
+        "title": "example glossary",
+        "GlossDiv": {
+            "title": "S",
+            "GlossList": {
+                "GlossEntry": {
+                    "ID": "SGML",
+                    "SortAs": "SGML",
+                    "Unicode": "Thíś íś ṕŕéttӳ fúń tőő. Dő śőḿéthíńǵ főŕ ӳőúŕ ǵŕőúṕ táǵ",
+                    "Acronym": "SGML",
+                    "Abbrev": "ISO 8879:1986",
+                    "GlossDef": {
+                        "para": "A meta-markup language, used to create markup languages such as DocBook.",
+                        "GlossSeeAlso": [
+                            "GML",
+                            "XML"
+                        ]
+                    },
+                    "GlossSee": "markup"
+                }
+            }
+        }
+    }
+}';
 
 	// tests
 	public function test_newModel() 
@@ -62,7 +99,7 @@ class ModelTest extends Base_TestCase {
 		$obj2->save();
 		$obj2_read = user::loadWithId( $obj2->id );
 		$this->assertTrue(is_a($obj2_read, user::class));
-		$this->assertEquals($obj2_read->email, 'email 01');
+		$this->assertEquals( 'email 01', $obj2_read->email );
 	}
 
 	public function test_newModel2() 
@@ -75,7 +112,7 @@ class ModelTest extends Base_TestCase {
 
 		$obj1_read = user_object_uniq::loadWithId( $obj1->name );
 		$this->assertTrue(is_a($obj1_read, user_object_uniq::class));
-		$this->assertEquals($obj1_read->lastname, 'obj_lastname1');
+		$this->assertEquals( 'obj_lastname1', $obj1_read->lastname );
 	}
 
 	public function test_update() 
@@ -91,8 +128,8 @@ class ModelTest extends Base_TestCase {
 
 		$obj1_read = user::loadWithId( '1' );
 		$this->assertTrue(is_a($obj1_read, user::class));
-		$this->assertEquals($obj1_read->email, 'new email');
-		$this->assertEquals($obj1_read->name, $oldName);
+		$this->assertEquals( 'new email', $obj1_read->email );
+		$this->assertEquals( $oldName, $obj1_read->name );
 	}
 
 	public function test_nokeyObj() 
@@ -107,7 +144,7 @@ class ModelTest extends Base_TestCase {
 
 		$obj1_read = user_object_nokey::loadWithField('name', 'user_object_nokey name');
 		$this->assertTrue(is_a($obj1_read, user_object_nokey::class));
-		$this->assertEquals($obj1_read->lastname, 'user_object_nokey lastname');
+		$this->assertEquals( 'user_object_nokey lastname', $obj1_read->lastname );
 
 		$obj->lastname = 'hello world';
 		try {
@@ -132,14 +169,14 @@ class ModelTest extends Base_TestCase {
 
 		$obj1_read = user_object_uniq::loadWithField('name', $id);
 		$this->assertTrue(is_a($obj1_read, user_object_uniq::class));
-		$this->assertEquals($obj1_read->lastname, 'user2_object_nokey lastname');
+		$this->assertEquals( 'user2_object_nokey lastname', $obj1_read->lastname );
 
 		$obj->lastname = 'hello world';
 		$obj->save();
 
 		$obj2_read = user_object_uniq::loadWithField('name', $id);
 		$this->assertTrue(is_a($obj2_read, user_object_uniq::class));
-		$this->assertEquals($obj2_read->lastname, 'hello world');
+		$this->assertEquals( 'hello world', $obj2_read->lastname);
 	}
 
 	public function test_fetch() 
@@ -175,7 +212,7 @@ class ModelTest extends Base_TestCase {
 		
 		$obj2 = user_object_uniq::loadWithId('test_fieldsLoad-name', ['name']);
 		
-		$this->assertEquals( $obj2->_model_loadedFields, ['name'] );
+		$this->assertEquals( ['name'], $obj2->_model_loadedFields );
 		
 		$obj2->lastname = 'test_fieldsLoad-lastname 2';
 		
@@ -185,5 +222,19 @@ class ModelTest extends Base_TestCase {
 		} catch (aphp\XPDO\Model_Exception $e) {
 			$this->assertTrue( true );
 		}
+	}
+	
+	public function test_JSON() {
+		$obj = user_json::newModel();
+		$obj->name = 'user_json01';
+		
+		$json = Utils::jsonDecode(self::$jsonExample);
+		
+		$obj->email = $json;
+		$obj->save();
+		
+		$obj2 = user_json::loadWithField('name', 'user_json01');
+		
+		$this->assertEquals( $json, $obj2->email);
 	}
 }
