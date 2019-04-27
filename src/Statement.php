@@ -91,6 +91,7 @@ class Statement extends StatementH {
 		if (is_array($colums)) {
 			$this->_jsonColumns = $colums;
 		}
+		return $this;
 	}
 
 	public function execute() {

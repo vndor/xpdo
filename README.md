@@ -2,7 +2,6 @@
 
 ![PHP Support](https://img.shields.io/badge/php%20tested-5.6-brightgreen.svg)
 ![PHP Support](https://img.shields.io/badge/php%20tested-7.1-brightgreen.svg)
-![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Travis](https://api.travis-ci.org/GonistLelatel/xpdo.svg?branch=master)
 
@@ -19,7 +18,14 @@ PHP5.6 , PHP7.0+
 
 ## Hello world
 
-Sample code to quick starting
+This is the object configuration of sample code at the down.
+
+Class name `user` is equal to database table name `user`.<br>
+Keyfield `id` is default.<br>
+`Autoincrement` is default.<br>
+`JSONFields` is empty by default.
+
+Sample code:
 
 ```php
 <?php 
@@ -29,20 +35,21 @@ use aphp\XPDO\Database;
 use aphp\XPDO\Model;
 
 class user extends Model {
-	/* uncomment this to get more options
+	//  uncomment this to get more options
+	/*
 	static function tableName() {
 		return 'user'; // table custom name
 	}
 	static function keyField() {
 		return 'id'; // keyField custom name
 	}
+	static function jsonFields() {
+		return []; 
+	}
 	static function keyFieldAutoIncrement() {
 		return true; // false if auto increment is not used
 	}
 	*/
-	// class name == 'user' == default configuration, className is equal tableName
-	// keyField == 'id' - default configuration
-	// keyFieldAutoIncrement = true - default configuration
 }
 
 $db = Database::getInstance();
@@ -79,12 +86,14 @@ user Object
 * Syntax like PDO.
 * PSR logger support to debug queries.
 * Model like ORM.
+* JSON fields support.
 
 ## Syntax
 
 **[Database](#Database)**<br>
 **[Statement](#Statement)**<br>
 **[Model](#Model)**<br>
+**[JSON](#JSON)**<br>
 
 ### Database
 Initialization
@@ -112,6 +121,7 @@ $db->setLogger( $logger );
 **[Database](#Database)**<br>
 **[Statement](#Statement)**<br>
 **[Model](#Model)**<br>
+**[JSON](#JSON)**<br>
 
 ### Statement
 Prepare
@@ -259,6 +269,7 @@ print_r($objects);
 **[Database](#Database)**<br>
 **[Statement](#Statement)**<br>
 **[Model](#Model)**<br>
+**[JSON](#JSON)**<br>
 
 ### Model
 
@@ -379,6 +390,43 @@ Delete model from database, optimizing
 ```php
 $user = user::loadWithId(1, [ user::keyField() ]);
 $user->delete();
+```
+**[Database](#Database)**<br>
+**[Statement](#Statement)**<br>
+**[Model](#Model)**<br>
+**[JSON](#JSON)**<br>
+
+### JSON
+
+Json bind detection is enabled by default.
+```php
+Utils::$_jsonBindDetection = true;
+```
+Bind json field value (INSERT, UPDATE).<br>
+If value is ARRAY then it's detecting as JSON type.
+```php
+$json = ['sampleJson' => 'jsonValue'];
+// api with bindNamedValue
+$statement->bindNamedValue('email', $json);
+
+// api with bindValues
+$statement->bindValues([ $json, 'otherFieldValue', 'otherFieldValue' ]);
+```
+In database this values stored as TEXT type, not JSON.<br>
+
+`SELECT` queries need to call `$statement->setJSONColumns` before fetching.
+```php
+$statement->setJSONColumns([ 'email' ]);
+$data = $statement->fetchLine();
+print_r($data['email']); // will see JSON ARRAY
+```
+Models using `jsonFields` to set JSON fields
+```php
+class user extends Model {
+	static function jsonFields() {
+		return [ 'email' ];
+	}
+}
 ```
 ## More features
 For more features:

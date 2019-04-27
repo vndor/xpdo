@@ -69,6 +69,7 @@ class DatabaseTest extends Base_TestCase {
 	protected function setUp()
     {
         Utils::$_jsonBindDetection = false;
+        parent::setUp();
     }
 	
 	// tests
