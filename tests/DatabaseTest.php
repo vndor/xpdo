@@ -238,12 +238,14 @@ class DatabaseTest extends Base_TestCase {
 		
 		$this->assertEquals( $json_text, $json_db );
 		
-		$statement->_pdoStatement->closeCursor();
+		$statement = $db->prepare("SELECT * FROM user WHERE name = ?");
+		$statement->bindValues([
+			'user_json01'
+		]);
 		$statement->setJSONColumns([ 'email' ]);
 		$user = $statement->fetchLine();
 		
 		$this->assertEquals( $json, $user['email'] );
-		
 		// bindNamedValue
 		
 		$statement = $db->prepare("INSERT INTO user ( `name`, `email`, `gender`, `age` ) VALUES ( 'user_json02', :json, 3, 2.5 )");

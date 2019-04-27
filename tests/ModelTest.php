@@ -186,8 +186,6 @@ class ModelTest extends Base_TestCase {
 		$objects = user_object_nokey::loadAllWithStatement($statement);
 		$this->assertTrue(is_a($objects[1], user_object_nokey::class));
 
-		$statement->_pdoStatement->closeCursor();
-
 		$statement2 = $db->prepare('SELECT * FROM user_uniq');
 		$object = user_object_nokey::loadWithStatement($statement2);
 		$this->assertTrue(is_a($object, user_object_nokey::class));
