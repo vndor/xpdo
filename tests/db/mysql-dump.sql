@@ -5,7 +5,7 @@ USE `testbase`;
 CREATE TABLE IF NOT EXISTS `user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(50) DEFAULT NULL,
-  `email` varchar(50) DEFAULT NULL,
+  `email` TEXT DEFAULT NULL,
   `gender` int(11) DEFAULT NULL,
   `age` float DEFAULT NULL,
   `binary` blob DEFAULT NULL,

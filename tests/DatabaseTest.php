@@ -1,6 +1,7 @@
 <?php 
 
 use aphp\XPDO\Database;
+use aphp\XPDO\Utils;
 
 class User_object {
 	public $id;
@@ -13,7 +14,7 @@ class User_object {
 	public $param1_v;
 	public $param2_v;
 
-	function __construct($param1, $param2) {
+	function __construct($param1 = null, $param2 = null) {
 		$this->param1_v = $param1;
 		$this->param2_v = $param2;
 	}
@@ -24,6 +25,33 @@ class DatabaseTest extends Base_TestCase {
 	// STATIC
 	static $blobFile1 = '';
 	static $blobFile2 = '';
+	
+	static $jsonExample = 
+'{
+    "glossary": {
+        "title": "example glossary",
+        "GlossDiv": {
+            "title": "S",
+            "GlossList": {
+                "GlossEntry": {
+                    "ID": "SGML",
+                    "SortAs": "SGML",
+                    "Unicode": "Thíś íś ṕŕéttӳ fúń tőő. Dő śőḿéthíńǵ főŕ ӳőúŕ ǵŕőúṕ táǵ",
+                    "Acronym": "SGML",
+                    "Abbrev": "ISO 8879:1986",
+                    "GlossDef": {
+                        "para": "A meta-markup language, used to create markup languages such as DocBook.",
+                        "GlossSeeAlso": [
+                            "GML",
+                            "XML"
+                        ]
+                    },
+                    "GlossSee": "markup"
+                }
+            }
+        }
+    }
+}';
 
 	public static function setUpBeforeClass() {
 		self::$blobFile1 = __DIR__ . '/blobData1.png';
@@ -37,6 +65,11 @@ class DatabaseTest extends Base_TestCase {
 		@unlink(self::$blobFile1);
 		@unlink(self::$blobFile2);
 	}
+	
+	protected function setUp()
+    {
+        Utils::$_jsonBindDetection = false;
+    }
 	
 	// tests
 	
@@ -92,19 +125,19 @@ class DatabaseTest extends Base_TestCase {
 		$statement->bindNamedValue('value', 'user_bindNamedValue1');
 		$statement->execute();
 		$statement = $db->prepare("SELECT `name` FROM user WHERE id = 1");
-		$this->assertEquals( $statement->fetchOne(), 'user_bindNamedValue1');
+		$this->assertEquals( 'user_bindNamedValue1', $statement->fetchOne() );
 		// bindNamedValues
 		$statement = $db->prepare("UPDATE user SET `name` = :value WHERE id = 1");
 		$statement->bindNamedValues([ 'value' => 'user_bindNamedValue2' ]);
 		$statement->execute();
 		$statement = $db->prepare("SELECT `name` FROM user WHERE id = 1");
-		$this->assertEquals( $statement->fetchOne(), 'user_bindNamedValue2');
+		$this->assertEquals( 'user_bindNamedValue2', $statement->fetchOne() );
 		// bindValues
 		$statement = $db->prepare("UPDATE user SET `name` = ? WHERE id = 1");
 		$statement->bindValues([ 'user_bindNamedValue3' ]);
 		$statement->execute();
 		$statement = $db->prepare("SELECT `name` FROM user WHERE id = 1");
-		$this->assertEquals( $statement->fetchOne(), 'user_bindNamedValue3');
+		$this->assertEquals( 'user_bindNamedValue3', $statement->fetchOne() );
 	}
 
 	public function test_bindValues_types() {
@@ -114,9 +147,9 @@ class DatabaseTest extends Base_TestCase {
 		$statement->bindNamedValues([ 'value' => 'test_bindValues_types', 'age' => 2.3 ]);
 		$statement->execute();
 		$statement = $db->prepare("SELECT `name` FROM user WHERE id = 1");
-		$this->assertEquals( $statement->fetchOne(), 'test_bindValues_types');
+		$this->assertEquals( 'test_bindValues_types',  $statement->fetchOne() );
 		$statement = $db->prepare("SELECT `age` FROM user WHERE id = 1");
-		$this->assertEquals( $statement->fetchOne(), '2.3');
+		$this->assertEquals( '2.3', $statement->fetchOne() );
 	}
 
 	public function test_objects() {
@@ -124,14 +157,14 @@ class DatabaseTest extends Base_TestCase {
 		$statement = $db->prepare("SELECT * FROM user WHERE id = 1");
 		$obj = $statement->fetchObject(User_object::class, [ 'p1', 'p2' ]);
 		$this->assertTrue( is_a($obj, User_object::class) );
-		$this->assertEquals( $obj->id , '1');
-		$this->assertEquals( $obj->param2_v , 'p2');
+		$this->assertEquals( '1', $obj->id);
+		$this->assertEquals( 'p2', $obj->param2_v);
 		
 		$statement = $db->prepare("SELECT * FROM user LIMIT 2");
 		$objList = $statement->fetchAllObjects(User_object::class, [ 'p3', 'p4' ]);
 		$this->assertTrue( is_a($objList[1], User_object::class) );
-		$this->assertEquals( $objList[1]->param1_v , 'p3');
-		$this->assertEquals( $objList[1]->param2_v , 'p4');
+		$this->assertEquals( 'p3', $objList[1]->param1_v );
+		$this->assertEquals( 'p4', $objList[1]->param2_v );
 	}
 
 	// Exceptions
@@ -177,6 +210,84 @@ class DatabaseTest extends Base_TestCase {
 		} catch (\PDOException $ex) {
 			$this->assertTrue(true);
 		}
+	}
+	
+	public function test_JSON() {
+		Utils::$_jsonBindDetection = true;
+		$json = Utils::jsonDecode(self::$jsonExample);
+		
+		// fetchLine
+		$db = Database::getInstance();
+		$statement = $db->prepare("INSERT INTO user ( `name`, `email`, `gender`, `age` ) VALUES ( 'user_json01', ?, 3, 2.5 )");
+		$statement->bindValues([
+			$json
+		]);
+		$statement->execute();
+
+		$statement = $db->prepare("SELECT * FROM user WHERE name = ?");
+		$statement->bindValues([
+			'user_json01'
+		]);
+		
+		$user = $statement->fetchLine();
+		
+		// windows line ending handling
+		$json_db = str_replace("\r", "", $user['email']);
+		$json_text = str_replace("\r", "", self::$jsonExample);
+		
+		$this->assertEquals( $json_text, $json_db );
+		
+		$statement->_pdoStatement->closeCursor();
+		$statement->setJSONColumns([ 'email' ]);
+		$user = $statement->fetchLine();
+		
+		$this->assertEquals( $json, $user['email'] );
+		
+		// bindNamedValue
+		
+		$statement = $db->prepare("INSERT INTO user ( `name`, `email`, `gender`, `age` ) VALUES ( 'user_json02', :json, 3, 2.5 )");
+		$statement->bindNamedValue( 'json', $json );
+		$statement->execute();
+		
+		$statement = $db->prepare("SELECT * FROM user WHERE name = :name");
+		$statement->bindNamedValue( 'name', 'user_json02' );
+		$user2 = $statement->fetchLine();
+		
+		$json_db = str_replace("\r", "", $user2['email']);
+		
+		$this->assertEquals( $json_text, $json_db );
+		
+		// fetchAllObjects
+		$statement = $db->prepare("SELECT * FROM user WHERE name = ? OR name = ?");
+		$statement->bindValues([
+			'user_json01', 'user_json02'
+		]);
+		$statement->setJSONColumns([ 'email' ]);
+		
+		$users = $statement->fetchAllObjects(User_object::class);
+		
+		$this->assertEquals( $json, $users[0]->email );
+		$this->assertEquals( $json, $users[1]->email );
+		
+		// fetchAll
+		$statement = $db->prepare("SELECT * FROM user WHERE name = ? OR name = ?");
+		$statement->bindValues([
+			'user_json01', 'user_json02'
+		]);
+		$statement->setJSONColumns([ 'email' ]);
+		$users = $statement->fetchAll();
+		
+		$this->assertEquals( $json, $users[0]['email'] );
+		$this->assertEquals( $json, $users[1]['email'] );
+		
+		// fetchOne
+		$statement = $db->prepare("SELECT email FROM user WHERE name = ?");
+		$statement->bindValues([
+			'user_json01'
+		]);
+		$statement->setJSONColumns([ 'email' ]);
+		$user = $statement->fetchOne();
+		$this->assertEquals( $json, $user );
 	}
 }
 	

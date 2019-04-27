@@ -7,14 +7,19 @@ namespace aphp\XPDO;
 # ------------------------------------
 
 abstract class StatementH {
+	const TYPE_JSON = 'json';
+	
 	public $_pdoStatement; // PDOStatement
 	public $_query;
 	public $_database; // aphp\XPDO\Database
 	public $_params = [];
+	protected $_jsonColumns = [];
 
 	abstract public function bindNamedValue($name, $value); // Statement
 	abstract public function bindNamedValues($params); // Statement, $params = array()
 	abstract public function bindValues($params);      // Statement, $params = array()
+	
+	abstract public function setJSONColumns($colums); // $colums = array()
 
 	abstract public function execute(); // Statement
 
@@ -42,6 +47,11 @@ class Statement extends StatementH {
 
 	public function bindNamedValue($name, $value) {
 		$type = $this->getPDOParamType($value);
+		// json conversion
+		if ($type === self::TYPE_JSON) {
+			$value = Utils::jsonEncode($value);
+			$type = $this->getPDOParamType($value);
+		}
 		$this->_pdoStatement->bindValue($name, $value, $type);
 		if ($this->logger) {
 			$this->_params[ $name ] = $value;
@@ -57,6 +67,14 @@ class Statement extends StatementH {
 	} 
 
 	public function bindValues($params) {  // $params = array()
+		if (Utils::$_jsonBindDetection) {
+			foreach ($params as &$value) {
+				$type = $this->getPDOParamType($value);
+				if ($type === self::TYPE_JSON) {
+					$value = Utils::jsonEncode($value);
+				}
+			}
+		}
 		$this->executeValues = $params;
 		if ($this->logger) {
 			$this->_params = $params;
@@ -65,6 +83,12 @@ class Statement extends StatementH {
 	}
 
 	// --
+	
+	public function setJSONColumns($colums) {
+		if (is_array($colums)) {
+			$this->_jsonColumns = $colums;
+		}
+	}
 
 	public function execute() {
 		if ($this->logger) {
@@ -86,6 +110,7 @@ class Statement extends StatementH {
 		$this->execute();
 		$array = $this->_pdoStatement->fetchAll(\PDO::FETCH_ASSOC);
 		if (is_array($array) && count($array) > 0) {
+			$this->jsonColumnsDecode($array, 'fetchAll');
 			return $array;
 		}
 		return null;
@@ -95,6 +120,7 @@ class Statement extends StatementH {
 		$this->execute();
 		$array = $this->_pdoStatement->fetch(\PDO::FETCH_ASSOC);
 		if (is_array($array)) {
+			$this->jsonColumnsDecode($array, 'fetchLine');
 			return $array;
 		}
 		return null;
@@ -104,6 +130,7 @@ class Statement extends StatementH {
 		$this->execute();
 		$array = $this->_pdoStatement->fetch(\PDO::FETCH_NUM);
 		if (is_array($array) && count($array)>0) {
+			$this->jsonColumnsDecode($array[0], 'fetchOne');
 			return $array[0];
 		}
 		return null;
@@ -143,6 +170,7 @@ class Statement extends StatementH {
 			$object = $this->_pdoStatement->fetchObject($className);
 		}
 		if (is_a($object, $className)) {
+			$this->jsonColumnsDecode($object, 'fetchObject');
 			return $object;
 		}
 		return null;
@@ -160,6 +188,7 @@ class Statement extends StatementH {
 			count($array) > 0 && 
 			is_a($array[0], $className)
 		) {
+			$this->jsonColumnsDecode($array, 'fetchAllObjects');
 			return $array;
 		}
 		return null;
@@ -172,7 +201,30 @@ class Statement extends StatementH {
 		if (is_int($value))    return \PDO::PARAM_INT;
 		if (is_string($value)) return \PDO::PARAM_STR;
 		if (is_float($value)) return \PDO::PARAM_STR; // FLOAT is not exists
-		if ($value == null)    return \PDO::PARAM_NULL;
+		if (Utils::$_jsonBindDetection && is_array($value)) return self::TYPE_JSON;
+		if ($value == null)   return \PDO::PARAM_NULL;
 		throw Statement_Exception::bindInvalidType($value, $this->_query);
+	}
+	
+	protected function jsonColumnsDecode( &$fetchResult , $callMethod ) {
+		if (count($this->_jsonColumns) > 0) {
+			if ($callMethod == 'fetchAll' || $callMethod == 'fetchAllObjects') {
+				foreach ($fetchResult as &$value) {
+					$this->jsonColumnsDecode($value, 'fetchObject');
+				}
+			} elseif ($callMethod == 'fetchObject' || $callMethod == 'fetchLine') {
+				foreach ($this->_jsonColumns as $column) {
+					if (is_object($fetchResult)) {
+						// object
+						$fetchResult->{ $column } = Utils::jsonDecode($fetchResult->{ $column });
+					} else {
+						// array
+						$fetchResult[ $column ] = Utils::jsonDecode($fetchResult[ $column ]);
+					}
+				}
+			} elseif ($callMethod == 'fetchOne') {
+				$fetchResult = Utils::jsonDecode($fetchResult);
+			}
+		}
 	}
 }

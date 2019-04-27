@@ -15,6 +15,12 @@ class Utils_Exception extends BaseException {
 	public static function tableFields($table) {
 		return self::createException('tableFields error, table = %s', $table);
 	}
+	public static function jsonEncodeException($value) {
+		return self::createException('jsonEncodeException, value = %s', print_r($value, true));
+	}
+	public static function jsonDecodeException($value) {
+		return self::createException('jsonDecodeException, value = %s', print_r($value, true));
+	}
 }
 
 class Database_Exception extends BaseException {

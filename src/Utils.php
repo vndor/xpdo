@@ -3,6 +3,8 @@
 namespace aphp\XPDO;
 
 /*
+Utils::jsonEncode($value)
+Utils::jsonDecode($value)
 Utils::quoteColumns($columnOrColumns)
 Utils::selectColumns($columns)
 Utils::SQLite_tableColumns(\PDO $pdo, $table)
@@ -16,8 +18,27 @@ class Utils {
 		'traceLevel' => 10,
 		'traceTopFiles' => [ 'Statement.php', 'Database.php', 'Model.php' ]
 	];
+	
+	static $_jsonBindDetection = true;
+	static $_jsonEncodeOptions = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK | JSON_PRETTY_PRINT;
 
 	// STATIC
+	static function jsonEncode($value) {
+		$value = json_encode($value, self::$_jsonEncodeOptions);
+		if ($value === false) {
+			throw Utils_Exception::jsonEncodeException($value);
+		}
+		return $value;
+	}
+	
+	static function jsonDecode($value) {
+		$value = json_decode($value, true);
+		if ($value === null) {
+			throw Utils_Exception::jsonDecodeException($value);
+		}
+		return $value;
+	}
+	
 	static function quoteColumns($columnOrColumns) {
 		if (is_array($columnOrColumns)) {
 			$columns = [];
