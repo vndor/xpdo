@@ -29,6 +29,7 @@ abstract class ModelH {
 	
 	abstract  static function loadWithWhereQuery($SQLWhere, $params,  $fields = []) { } // Model or null
 	abstract  static function loadAllWithWhereQuery($SQLWhere, $params,  $fields = []) { } // [ Model ] or null
+	abstract  static function loadAll($fields = []) { } // [ Model ] or null
 	
 	abstract static function loadWithStatement(Statement $statement) { } // Model or null , 
 	abstract static function loadAllWithStatement(Statement $statement) { }  // [ Model ] or null
@@ -60,7 +61,11 @@ class Model extends ModelH {
 		$db = Database::getInstance();
 		$select = Utils::selectColumns($fields);
 		$table = Utils::quoteColumns( static::tableName() );
-		$statement = $db->prepare( "SELECT $select FROM $table WHERE $SQLWhere" );
+		if ($SQLWhere === null) {
+			$statement = $db->prepare( "SELECT $select FROM $table" );
+		} else {
+			$statement = $db->prepare( "SELECT $select FROM $table WHERE $SQLWhere" );
+		}
 		// json conversion
 		$statement->setJSONColumns( static::jsonFields() );
 		// --
@@ -132,6 +137,11 @@ class Model extends ModelH {
 
 	static function loadAllWithWhereQuery($SQLWhere, $params,  $fields = []) { // [ Model ] or null
 		$statement = self::statementWithWhereQuery($SQLWhere, $params, $fields);
+		return $statement->fetchAllObjects( get_called_class() , [ self::LOADED_WITH_DB, $fields ]);
+	}
+
+	static function loadAll($fields = []) { // [ Model ] or null
+		$statement = self::statementWithWhereQuery(null, [], $fields);
 		return $statement->fetchAllObjects( get_called_class() , [ self::LOADED_WITH_DB, $fields ]);
 	}
 
