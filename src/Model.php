@@ -20,6 +20,9 @@ abstract class ModelH {
 	static function tableName() {
 		return (new \ReflectionClass(get_called_class()))->getShortName();
 	}
+	static function database() {
+		return Database::getInstance();
+	}
 	// STATIC
 	static $_fields = []; // [className] = [ field, field, field ]
 
@@ -58,7 +61,7 @@ class Model extends ModelH {
 	// PRIVATE
 
 	private static function statementWithWhereQuery($SQLWhere, $params,  $fields) { // Statement
-		$db = Database::getInstance();
+		$db = static::database();
 		$select = Utils::selectColumns($fields);
 		$table = Utils::quoteColumns( static::tableName() );
 		if ($SQLWhere === null) {
@@ -83,7 +86,7 @@ class Model extends ModelH {
 		if (count($fields) == 0) {
 			$class = get_called_class();
 			if (!isset(self::$_fields[$class])) {
-				$db = Database::getInstance();
+				$db = static::database();
 				if ($db->isSQLite()) {
 					self::$_fields[$class] = Utils::SQLite_tableColumns( $db->getPDO(), static::tableName() );
 				}
@@ -123,7 +126,7 @@ class Model extends ModelH {
 		if (static::keyField() == null) {
 			return null;
 		}
-		$db = Database::getInstance();
+		$db = static::database();
 		return $db->fetchLastId(static::tableName(), static::keyField());
 	}
 
@@ -203,7 +206,7 @@ class Model extends ModelH {
 		$table = Utils::quoteColumns( static::tableName() );
 		$where = Utils::quoteColumns(static::keyField()) . ' = :keyvalue'; 
 		$query = "DELETE FROM $table WHERE $where";
-		$db = Database::getInstance();
+		$db = static::database();
 		$db->prepare($query)
 			->bindNamedValue('keyvalue', $keyField)
 			->execute();
@@ -213,7 +216,7 @@ class Model extends ModelH {
 	// PROTECTED
 
 	protected function save_update(&$fields) {
-		$db = Database::$instance;
+		$db = static::database();
 		$set = []; 
 		$params = [];
 		$i = 0;
@@ -244,7 +247,7 @@ class Model extends ModelH {
 	}
 	
 	protected function save_insert(&$fields) {
-		$db = Database::$instance;
+		$db = static::database();
 		$table = Utils::quoteColumns( static::tableName() );
 		$keyField = static::keyField();
 		$keyFieldAutoIncrement = static::keyFieldAutoIncrement();

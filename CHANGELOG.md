@@ -3,6 +3,11 @@
 ## Future
 * Documentation, test and code cleanup.
 
+## 1.0.7
+
+* Model: Added multiple database support.
+* Improved the documentation.
+
 ## 1.0.5
 
 * Statement: Added JSON fields support.

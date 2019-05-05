@@ -94,6 +94,7 @@ user Object
 **[Statement](#Statement)**<br>
 **[Model](#Model)**<br>
 **[JSON](#JSON)**<br>
+**[Multiple Databases](#Multiple_Databases)**
 
 ### Database
 Initialization
@@ -122,6 +123,7 @@ $db->setLogger( $logger );
 **[Statement](#Statement)**<br>
 **[Model](#Model)**<br>
 **[JSON](#JSON)**<br>
+**[Multiple Databases](#Multiple_Databases)**
 
 ### Statement
 Prepare
@@ -270,6 +272,7 @@ print_r($objects);
 **[Statement](#Statement)**<br>
 **[Model](#Model)**<br>
 **[JSON](#JSON)**<br>
+**[Multiple Databases](#Multiple_Databases)**
 
 ### Model
 
@@ -380,6 +383,22 @@ $statement = $db->prepare('SELECT * FROM user');
 $objects = user::loadAllWithStatement($statement);
 print_r($objects);
 ```
+### Model - Where Query
+Load with where query
+```php
+$object = user::loadWithWhereQuery('id = ?', [ 0 ]);
+print_r($object); // user
+```
+Load all with where query
+```php
+$objects = user::loadAllWithWhereQuery('id > ?', [ 0 ]);
+print_r($objects); // [ user ]
+```
+Load all : `SELECT * FROM user` equivalent
+```php
+$objects = user::loadAll();
+print_r($objects); // [ user ]
+```
 ### Model - Delete
 Delete model from database
 ```php
@@ -395,7 +414,7 @@ $user->delete();
 **[Statement](#Statement)**<br>
 **[Model](#Model)**<br>
 **[JSON](#JSON)**<br>
-
+**[Multiple Databases](#Multiple_Databases)**
 ### JSON
 
 Json bind detection is enabled by default.
@@ -425,6 +444,41 @@ Models using `jsonFields` to set JSON fields
 class user extends Model {
 	static function jsonFields() {
 		return [ 'email' ];
+	}
+}
+```
+**[Database](#Database)**<br>
+**[Statement](#Statement)**<br>
+**[Model](#Model)**<br>
+**[JSON](#JSON)**<br>
+**[Multiple Databases](#Multiple_Databases)**
+### Multiple_Databases
+
+By the default used 1 instance of database.<br>
+To create `multiple` instances use sample code:
+```php
+class DBStatic {
+	static $db1;
+	static $db2;
+}
+DBStatic::$db1 = = new Database;
+DBStatic::$db1->SQLiteInit( $filename1 );
+
+DBStatic::$db2 = = new Database;
+DBStatic::$db2->SQLiteInit( $filename2 );
+
+```
+Models needs to override `database` method
+```php
+class User_db01 extends Model {
+	static function database() {
+		return DBStatic::$db1
+	}
+}
+
+class User_db02 extends Model {
+	static function database() {
+		return DBStatic::$db2;
 	}
 }
 ```
