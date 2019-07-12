@@ -482,6 +482,30 @@ class User_db02 extends Model {
 	}
 }
 ```
+
+## Test running
+
+* install __phpunit, composer, php__ if not installed
+* run __composer install__ at package dir
+* run __tests/startTest-sqlite.bat__
+* run __tests/startTest-mysql.bat__
+
+On linux use *.sh files like *.bat files
+
+## Useful links: 
+* Cmd windows
+	* [WindowsPathEditor](https://rix0rrr.github.io/WindowsPathEditor/)
+	* [conemu](https://conemu.github.io/)
+* PHP in CMD
+	* [windows.php.net](https://windows.php.net/)
+	* [xampp](https://www.apachefriends.org/ru/index.html)
+	* [phpunit 5](https://phpunit.de/getting-started/phpunit-5.html)
+	* [phpunit in bat](https://stackoverflow.com/questions/24861233/phpunit-setup-in-batch-file)
+	* [composer in bat](http://leedavis81.github.io/global-installation-of-composer-on-windows/)
+* Git client
+	* [git](https://gitforwindows.org/)
+	* [smartgit](https://www.syntevo.com/smartgit/)
+
 ## More features
 For more features:
 * read source code and examples
