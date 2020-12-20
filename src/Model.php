@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace aphp\XPDO;
 
@@ -14,28 +14,35 @@ abstract class ModelH {
 	static function jsonFields() {
 		return [];
 	}
+	static function dateFields() {
+		return [];
+	}
 	static function keyFieldAutoIncrement() {
 		return true;
 	}
 	static function tableName() {
-		return (new \ReflectionClass(get_called_class()))->getShortName();
+		$rf = new \ReflectionClass( get_called_class() );
+		return \strtolower( $rf->getShortName() );
 	}
 	static function database() {
 		return Database::getInstance();
 	}
+	static function relations() {
+		return [];
+	}
 	// STATIC
 	static $_fields = []; // [className] = [ field, field, field ]
 
-	/* 
-	abstract static function newModel() { } // Model 
+	/*
+	abstract static function newModel() { } // Model
 	abstract static function lastId() { } // value OR null
-	
-	abstract  static function loadWithWhereQuery($SQLWhere, $params,  $fields = []) { } // Model or null
-	abstract  static function loadAllWithWhereQuery($SQLWhere, $params,  $fields = []) { } // [ Model ] or null
-	abstract  static function loadAll($fields = []) { } // [ Model ] or null
-	
-	abstract static function loadWithStatement(Statement $statement) { } // Model or null , 
-	abstract static function loadAllWithStatement(Statement $statement) { }  // [ Model ] or null
+
+	abstract  static function loadWithWhereQuery($SQLWhere, $params = [],  $fields = []) { } // Model or null
+	abstract  static function loadAllWithWhereQuery($SQLWhere, $params = [],  $fields = []) { } // [ Model ] or (ModelConfig::$fetchAll_nullValue)
+	abstract  static function loadAll($fields = []) { } // [ Model ] or (ModelConfig::$fetchAll_nullValue)
+
+	abstract static function loadWithStatement(Statement $statement, $fields = []) { } // Model or null ,
+	abstract static function loadAllWithStatement(Statement $statement, $fields = []) { }  // [ Model ] or (ModelConfig::$fetchAll_nullValue)
 
 	abstract static function loadWithField( $field, $value, $fields = [],  $newModel = false ) { } // Model or null
 	abstract static function loadWithId( $value, $fields = [],  $newModel = false ) { } // Model or null
@@ -45,9 +52,12 @@ abstract class ModelH {
 	public $_model_isLoadedWithDB = false;
 	protected $_model_isDeleted = false;
 	public $_model_loadedFields = null;
+	protected $_model_relation = null;
 
 	abstract public function save($fields = []);
 	abstract public function delete();
+
+	abstract public function relation(); // Relation
 }
 
 # ------------------------------------
@@ -69,8 +79,9 @@ class Model extends ModelH {
 		} else {
 			$statement = $db->prepare( "SELECT $select FROM $table WHERE $SQLWhere" );
 		}
-		// json conversion
+		// conversion
 		$statement->setJSONColumns( static::jsonFields() );
+		$statement->setDateColumns( static::dateFields() );
 		// --
 		if (count($params) > 0) {
 			if (strpos($statement->_query, '?') !== false) {
@@ -98,7 +109,7 @@ class Model extends ModelH {
 		}
 		return $fields;
 	}
-	
+
 	// Constructor
 
 	public function __construct($isLoadedWithDB = false, $_model_loadedFields = []) {
@@ -132,34 +143,36 @@ class Model extends ModelH {
 
 	// --
 
-	static function loadWithWhereQuery($SQLWhere, $params,  $fields = []) { // Model or null
+	static function loadWithWhereQuery($SQLWhere, $params = [],  $fields = []) { // Model or null
 		$SQLWhere .= ' LIMIT 1';
 		$s = self::statementWithWhereQuery($SQLWhere, $params, $fields);
-		return $s->fetchObject( get_called_class() , [ self::LOADED_WITH_DB, $fields ]);		
+		return $s->fetchObject( get_called_class() , [ self::LOADED_WITH_DB, $fields ]);
 	}
 
-	static function loadAllWithWhereQuery($SQLWhere, $params,  $fields = []) { // [ Model ] or null
+	static function loadAllWithWhereQuery($SQLWhere, $params = [],  $fields = []) { // [ Model ] or (ModelConfig::$fetchAll_nullValue)
 		$statement = self::statementWithWhereQuery($SQLWhere, $params, $fields);
 		return $statement->fetchAllObjects( get_called_class() , [ self::LOADED_WITH_DB, $fields ]);
 	}
 
-	static function loadAll($fields = []) { // [ Model ] or null
+	static function loadAll($fields = []) { // [ Model ] or (ModelConfig::$fetchAll_nullValue)
 		$statement = self::statementWithWhereQuery(null, [], $fields);
 		return $statement->fetchAllObjects( get_called_class() , [ self::LOADED_WITH_DB, $fields ]);
 	}
 
-	static function loadWithStatement(Statement $statement) { // Model or null
-		// json conversion
+	static function loadWithStatement(Statement $statement, $fields = []) { // Model or null
+		// conversion
 		$statement->setJSONColumns( static::jsonFields() );
+		$statement->setDateColumns( static::dateFields() );
 		// --
-		return $statement->fetchObject( get_called_class() , [ self::LOADED_WITH_DB ]);
+		return $statement->fetchObject( get_called_class() , [ self::LOADED_WITH_DB, $fields ]);
 	}
 
-	static function loadAllWithStatement(Statement $statement) { // [ Model ] or null
-		// json conversion
+	static function loadAllWithStatement(Statement $statement, $fields = []) { // [ Model ] or (ModelConfig::$fetchAll_nullValue)
+		// conversion
 		$statement->setJSONColumns( static::jsonFields() );
+		$statement->setDateColumns( static::dateFields() );
 		// --
-		return $statement->fetchAllObjects( get_called_class() , [ self::LOADED_WITH_DB ]);
+		return $statement->fetchAllObjects( get_called_class() , [ self::LOADED_WITH_DB, $fields ]);
 	}
 
 	static function loadWithField( $field, $value, $fields = [],  $newModel = false ) { // Model or null
@@ -204,7 +217,7 @@ class Model extends ModelH {
 			return false;
 		}
 		$table = Utils::quoteColumns( static::tableName() );
-		$where = Utils::quoteColumns(static::keyField()) . ' = :keyvalue'; 
+		$where = Utils::quoteColumns(static::keyField()) . ' = :keyvalue';
 		$query = "DELETE FROM $table WHERE $where";
 		$db = static::database();
 		$db->prepare($query)
@@ -217,12 +230,12 @@ class Model extends ModelH {
 
 	protected function save_update(&$fields) {
 		$db = static::database();
-		$set = []; 
+		$set = [];
 		$params = [];
 		$i = 0;
 		$keyField = static::keyField();
 		if (!is_string($keyField)) {
-			throw Model_Exception::keyFieldIsNull( get_class() );
+			throw XPDOException::keyFieldIsNull( get_class() );
 		}
 		foreach ($fields as $column) {
 			if ($column == $keyField) {
@@ -234,7 +247,7 @@ class Model extends ModelH {
 			$i++;
 		}
 		if (count($set) == 0) {
-			throw Model_Exception::emptyUpdateFields(static::class, 'save_update');
+			throw XPDOException::emptyUpdateFields(static::class, 'save_update');
 		}
 		$where = Utils::quoteColumns($keyField) . ' = :keyvalue';
 		$params['keyvalue'] = $this->{ $keyField };
@@ -245,7 +258,7 @@ class Model extends ModelH {
 			->bindNamedValues($params)
 			->execute();
 	}
-	
+
 	protected function save_insert(&$fields) {
 		$db = static::database();
 		$table = Utils::quoteColumns( static::tableName() );
@@ -274,9 +287,57 @@ class Model extends ModelH {
 		$db->prepare($query)
 			->bindNamedValues($params)
 			->execute();
-		
+
 		if (is_string($keyField) && $keyFieldAutoIncrement) {
 			$this->{ $keyField } = static::lastId();
 		}
 	}
+
+	public function relation() // Relation
+	{
+		if (!$this->_model_relation) {
+			$relationClass = ModelConfig::$relationClass;
+			$this->_model_relation = new $relationClass(get_class($this));
+		}
+		$this->_model_relation->__model = $this;
+		return $this->_model_relation;
+	}
+
+	// Magic methods
+
+	public function __get( $id ) {
+		if (ModelConfig::$relationMagicMethods) {
+			$r = static::relations();
+			if (isset($r[$id])) {
+				return $this->relation()->{ $id };
+			}
+		}
+		if (isset($this->id)) {
+			return $this->id;
+		}
+		return null;
+	}
+
+	public function __set( $id, $val ) {
+		if (ModelConfig::$relationMagicMethods) {
+			$r = static::relations();
+			if (isset($r[$id])) {
+				$this->relation()->{ $id } = $val;
+				return;
+			}
+		}
+		$this->{ $id } = $val;
+	}
+
+	public function __call($name, $arguments) {
+		if (ModelConfig::$relationMagicMethods) {
+			if (in_array($name, ['toManyAdd', 'toManyAddAll', 'toManyRemove', 'toManyRemoveAll', 'relation_orderBy'])) {
+				if (strpos($name, 'relation_') === 0) {
+					$name = substr($name, strlen('relation_'));
+				}
+				return \call_user_func_array([$this->relation(), $name], $arguments);
+			}
+		}
+		return null;
+    }
 }

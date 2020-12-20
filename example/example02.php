@@ -1,9 +1,9 @@
-<?php 
+<?php
 
 require __DIR__ . '/../vendor/autoload.php';
 
 use aphp\XPDO\Database;
-use aphp\logger\FileLogger;
+use aphp\Logger\FileLogger;
 
 class User_object {
 	public $id;
@@ -16,6 +16,10 @@ class User_object {
 		$this->param1_v = $param1;
 		$this->param2_v = $param2;
 	}
+}
+
+if (!file_exists(__DIR__ . '/sampleBase.sqlite')) {
+	copy(__DIR__ . '/../tests/db/sampleBase.sqlite', __DIR__ . '/sampleBase.sqlite');
 }
 
 $db = Database::getInstance();

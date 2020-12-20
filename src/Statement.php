@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace aphp\XPDO;
 
@@ -8,22 +8,31 @@ namespace aphp\XPDO;
 
 abstract class StatementH {
 	const TYPE_JSON = 'json';
-	
+	const TYPE_DATE = 'date';
+	const NOVALUE = '___-666__';
+
 	public $_pdoStatement; // PDOStatement
 	public $_query;
 	public $_database; // aphp\XPDO\Database
 	public $_params = [];
 	protected $_jsonColumns = [];
+	protected $_dateColumns = [];
+
+	// cache control
+	public $_cached = false;
+	public $_cachedResult = [];
+	public $_cachedResult_value = StatementH::NOVALUE;
 
 	abstract public function bindNamedValue($name, $value); // Statement
 	abstract public function bindNamedValues($params); // Statement, $params = array()
 	abstract public function bindValues($params);      // Statement, $params = array()
-	
+
 	abstract public function setJSONColumns($colums); // $colums = array()
+	abstract public function setDateColumns($colums);
 
 	abstract public function execute(); // Statement
 
-	abstract public function fetchAll(); // array[row][column] OR null
+	abstract public function fetchAll(); // array[row][column] OR (ModelConfig::$fetchAll_nullValue)
 	abstract public function fetchLine(); // array[column] OR null
 	abstract public function fetchOne(); // value OR null
 	abstract public function fetchLastId($table, $idColumn); // value OR null
@@ -35,7 +44,7 @@ abstract class StatementH {
 
 	// Object Interface
 	abstract public function fetchObject($className, $constructorParams = null); // object OR null
-	abstract public function fetchAllObjects($className, $constructorParams = null); // [object] OR null
+	abstract public function fetchAllObjects($className, $constructorParams = null); // [object] OR (ModelConfig::$fetchAll_nullValue)
 }
 
 # ------------------------------------
@@ -47,11 +56,8 @@ class Statement extends StatementH {
 
 	public function bindNamedValue($name, $value) {
 		$type = $this->getPDOParamType($value);
-		// json conversion
-		if ($type === self::TYPE_JSON) {
-			$value = Utils::jsonEncode($value);
-			$type = $this->getPDOParamType($value);
-		}
+		// conversion
+		$this->paramEncode($value, $type);
 		// --
 		$this->_pdoStatement->bindValue($name, $value, $type);
 		if ($this->logger) {
@@ -65,17 +71,13 @@ class Statement extends StatementH {
 			$this->bindNamedValue($name, $value);
 		}
 		return $this;
-	} 
+	}
 
 	public function bindValues($params) {  // $params = array()
-		// json conversion
-		if (Utils::$_jsonBindDetection) {
-			foreach ($params as &$value) {
-				$type = $this->getPDOParamType($value);
-				if ($type === self::TYPE_JSON) {
-					$value = Utils::jsonEncode($value);
-				}
-			}
+		foreach ($params as &$value) {
+			$type = $this->getPDOParamType($value);
+			// conversion
+			$this->paramEncode($value, $type);
 		}
 		// --
 		$this->executeValues = $params;
@@ -86,7 +88,7 @@ class Statement extends StatementH {
 	}
 
 	// --
-	
+
 	public function setJSONColumns($colums) {
 		if (is_array($colums)) {
 			$this->_jsonColumns = $colums;
@@ -94,11 +96,36 @@ class Statement extends StatementH {
 		return $this;
 	}
 
+	public function setDateColumns($colums) {
+		if (is_array($colums)) {
+			$this->_dateColumns = $colums;
+		}
+		return $this;
+	}
+
 	public function execute() {
+		$query = Utils::interpolateQuery($this->_query, $this->_params);
 		if ($this->logger) {
-			$query = Utils::interpolateQuery($this->_query, $this->_params);
 			$this->logger->info($query, Utils::$_logContext);
 		}
+		// --
+		if ($this->_cached) {
+			$hash = md5($query);
+			if (!isset($this->_cachedResult[ $hash ])) {
+				$this->_cachedResult[ $hash ] = Statement::NOVALUE;
+			}
+			$this->_cachedResult_value = &$this->_cachedResult[ $hash ];
+			if ($this->_cachedResult_value != Statement::NOVALUE) {
+				if ($this->logger) {
+					$this->logger->info('FETCH CACHED', Utils::$_logContext);
+				}
+				return $this;
+			}
+		} else {
+			unset($this->_cachedResult_value); // disable link
+			$this->_cachedResult_value = Statement::NOVALUE;
+		}
+		// --
 		if (is_array($this->executeValues)) {
 			$this->_pdoStatement->execute( $this->executeValues );
 			$this->executeValues = null;
@@ -112,23 +139,37 @@ class Statement extends StatementH {
 
 	public function fetchAll() {
 		$this->execute();
+		// --
+		if ($this->_cachedResult_value != Statement::NOVALUE) {
+			return $this->_cachedResult_value;
+		}
+		// --
 		$array = $this->_pdoStatement->fetchAll(\PDO::FETCH_ASSOC);
 		if (is_array($array) && count($array) > 0) {
-			// json conversion
-			$this->jsonColumnsDecode($array, 'fetchAll');
+			// conversion
+			$this->columnsDecode($array, 'fetchAll', $this->_jsonColumns, function($v) { return Utils::jsonDecode($v); });
+			$this->columnsDecode($array, 'fetchAll', $this->_dateColumns, function($v) { return new DateTime($v); });
 			// ---
+			$this->_cachedResult_value = $array;
 			return $array;
 		}
-		return null;
+		return ModelConfig::$fetchAll_nullValue;
 	}
 
 	public function fetchLine() {
 		$this->execute();
+		// --
+		if ($this->_cachedResult_value != Statement::NOVALUE) {
+			return $this->_cachedResult_value;
+		}
+		// --
 		$array = $this->_pdoStatement->fetch(\PDO::FETCH_ASSOC);
 		if (is_array($array)) {
-			// json conversion
-			$this->jsonColumnsDecode($array, 'fetchLine');
+			// conversion
+			$this->columnsDecode($array, 'fetchLine', $this->_jsonColumns, function($v) { return Utils::jsonDecode($v); });
+			$this->columnsDecode($array, 'fetchLine', $this->_dateColumns, function($v) { return new DateTime($v); });
 			// ---
+			$this->_cachedResult_value = $array;
 			return $array;
 		}
 		return null;
@@ -136,11 +177,18 @@ class Statement extends StatementH {
 
 	public function fetchOne() {
 		$this->execute();
+		// --
+		if ($this->_cachedResult_value != Statement::NOVALUE) {
+			return $this->_cachedResult_value;
+		}
+		// --
 		$array = $this->_pdoStatement->fetch(\PDO::FETCH_NUM);
 		if (is_array($array) && count($array)>0) {
-			// json conversion
-			$this->jsonColumnsDecode($array[0], 'fetchOne');
+			// conversion
+			$this->columnsDecode($array[0], 'fetchOne', $this->_jsonColumns, function($v) { return Utils::jsonDecode($v); });
+			$this->columnsDecode($array[0], 'fetchOne', $this->_dateColumns, function($v) { return new DateTime($v); });
 			// ---
+			$this->_cachedResult_value = $array[0];
 			return $array[0];
 		}
 		return null;
@@ -159,7 +207,7 @@ class Statement extends StatementH {
 	public function bindNamedBlobAsFilename($name, $filename) {
 		$fp = @fopen($filename, 'rb'); // read binary
 		if ($fp === false) {
-			throw Statement_Exception::bindNamedBlobAsFilenameException($name, $this->_query, $filename);
+			throw XPDOException::bindNamedBlobAsFilenameException($name, $this->_query, $filename);
 		}
 		$this->bindNamedBlob($name, $fp);
 	}
@@ -174,15 +222,22 @@ class Statement extends StatementH {
 
 	public function fetchObject($className, $constructorParams = null) {
 		$this->execute();
+		// --
+		if ($this->_cachedResult_value != Statement::NOVALUE) {
+			return $this->_cachedResult_value;
+		}
+		// --
 		if ($constructorParams) {
 			$object = $this->_pdoStatement->fetchObject($className, $constructorParams);
 		} else {
 			$object = $this->_pdoStatement->fetchObject($className);
 		}
 		if (is_a($object, $className)) {
-			// json conversion
-			$this->jsonColumnsDecode($object, 'fetchObject');
+			// conversion
+			$this->columnsDecode($object, 'fetchObject', $this->_jsonColumns, function($v) { return Utils::jsonDecode($v); });
+			$this->columnsDecode($object, 'fetchObject', $this->_dateColumns, function($v) { return new DateTime($v); });
 			// --
+			$this->_cachedResult_value = $object;
 			return $object;
 		}
 		return null;
@@ -190,55 +245,74 @@ class Statement extends StatementH {
 
 	public function fetchAllObjects($className, $constructorParams = null) {
 		$this->execute();
+		// --
+		if ($this->_cachedResult_value != Statement::NOVALUE) {
+			return $this->_cachedResult_value;
+		}
+		// --
 		if ($constructorParams) {
 			$array = $this->_pdoStatement->fetchAll(\PDO::FETCH_CLASS, $className, $constructorParams);
 		} else {
 			$array = $this->_pdoStatement->fetchAll(\PDO::FETCH_CLASS, $className);
 		}
 		if (
-			is_array($array) && 
-			count($array) > 0 && 
+			is_array($array) &&
+			count($array) > 0 &&
 			is_a($array[0], $className)
 		) {
-			// json conversion
-			$this->jsonColumnsDecode($array, 'fetchAllObjects');
+			// conversion
+			$this->columnsDecode($array, 'fetchAllObjects', $this->_jsonColumns, function($v) { return Utils::jsonDecode($v); });
+			$this->columnsDecode($array, 'fetchAllObjects', $this->_dateColumns, function($v) { return new DateTime($v); });
 			// --
+			$this->_cachedResult_value = $array;
 			return $array;
 		}
-		return null;
+		return ModelConfig::$fetchAll_nullValue;
 	}
 
 	// PROTECTED
-	
+
 	protected $executeValues = null;
 	protected function getPDOParamType( &$value ) {
 		if (is_int($value))    return \PDO::PARAM_INT;
 		if (is_string($value)) return \PDO::PARAM_STR;
 		if (is_float($value)) return \PDO::PARAM_STR; // FLOAT is not exists
-		if (Utils::$_jsonBindDetection && is_array($value)) return self::TYPE_JSON;
+		if (is_bool($value)) return \PDO::PARAM_BOOL;
 		if ($value == null)   return \PDO::PARAM_NULL;
-		throw Statement_Exception::bindInvalidType($value, $this->_query);
+		if (Utils::$_jsonBindDetection && is_array($value)) return self::TYPE_JSON;
+		if (is_a($value, DateTime::class)) return self::TYPE_DATE;
+		throw XPDOException::bindInvalidType($value, $this->_query);
 	}
-	
-	protected function jsonColumnsDecode( &$fetchResult , $callMethod ) {
-		if (count($this->_jsonColumns) > 0) {
+
+	protected function columnsDecode( &$fetchResult , $callMethod, $columns, $decoderClosure ) {
+		if (count($columns) > 0) {
 			if ($callMethod == 'fetchAll' || $callMethod == 'fetchAllObjects') {
 				foreach ($fetchResult as &$value) {
-					$this->jsonColumnsDecode($value, 'fetchObject');
+					$this->columnsDecode($value, 'fetchObject', $columns, $decoderClosure);
 				}
 			} elseif ($callMethod == 'fetchObject' || $callMethod == 'fetchLine') {
-				foreach ($this->_jsonColumns as $column) {
+				foreach ($columns as $column) {
 					if (is_object($fetchResult)) {
 						// object
-						$fetchResult->{ $column } = Utils::jsonDecode($fetchResult->{ $column });
+						$fetchResult->{ $column } = call_user_func_array($decoderClosure, [ $fetchResult->{ $column } ]);
 					} else {
 						// array
-						$fetchResult[ $column ] = Utils::jsonDecode($fetchResult[ $column ]);
+						$fetchResult[ $column ] = call_user_func_array($decoderClosure, [ $fetchResult[ $column ] ]);
 					}
 				}
 			} elseif ($callMethod == 'fetchOne') {
-				$fetchResult = Utils::jsonDecode($fetchResult);
+				$fetchResult = call_user_func_array($decoderClosure, [ $fetchResult ]);
 			}
+		}
+	}
+
+	protected function paramEncode(&$value, &$type) {
+		if ($type === self::TYPE_JSON) {
+			$value = Utils::jsonEncode($value);
+			$type = $this->getPDOParamType($value);
+		} elseif ($type === self::TYPE_DATE) {
+			$value = $value->getText();
+			$type = $this->getPDOParamType($value);
 		}
 	}
 }

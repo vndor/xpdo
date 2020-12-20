@@ -1,7 +1,7 @@
 # XPDO
 
 ![PHP Support](https://img.shields.io/badge/php%20tested-5.6-brightgreen.svg)
-![PHP Support](https://img.shields.io/badge/php%20tested-7.1-brightgreen.svg)
+![PHP Support](https://img.shields.io/badge/php%20tested-7-brightgreen.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Travis](https://api.travis-ci.org/GonistLelatel/xpdo.svg?branch=master)
 
@@ -16,19 +16,31 @@ PHP5.6 , PHP7.0+
 
 `composer require aphp/xpdo`
 
-## Hello world
+## Features
 
+* MYSQL, SQLite support.
+* Prepared statement syntax for queries.
+* Params values binding.
+* Syntax like PDO.
+* Model like ORM.
+* Relations support: one-to-one, one-to-many, many-to-many.
+* JSON fields support.
+* Date fields support.
+* PSR logger support for the query debugging.
+
+## Hello world
 This is the object configuration of sample code at the down.
 
-Class name `user` is equal to database table name `user`.<br>
-Keyfield `id` is default.<br>
-`Autoincrement` is default.<br>
-`JSONFields` is empty by default.
+* Class name `user` is equal to database table name `user`.
+* `keyField` is default (=id).
+* `keyFieldAutoIncrement` is default (=true).
+* `jsonFields`, `dateFields`, is empty by default. (=[])
+* `relations` is empty by default (=[]).
 
 Sample code:
 
 ```php
-<?php 
+<?php
 require 'vendor/autoload.php';
 
 use aphp\XPDO\Database;
@@ -44,7 +56,13 @@ class user extends Model {
 		return 'id'; // keyField custom name
 	}
 	static function jsonFields() {
-		return []; 
+		return [];
+	}
+	static function dateFields() {
+		return [];
+	}
+	static function relations() {
+		return [];
 	}
 	static function keyFieldAutoIncrement() {
 		return true; // false if auto increment is not used
@@ -78,27 +96,11 @@ user Object
     [_model_isDeleted:protected] =>
 )
 ```
-## Features
+## Documentation
+<details><summary><b>&#x1F535; Database</b></summary>
+<p>
 
-* MYSQL, SQLite support.
-* Prepared statement syntax for queries.
-* Params values binding.
-* Syntax like PDO.
-* PSR logger support to debug queries.
-* Model like ORM.
-* JSON fields support.
-
-## Syntax
-
-**[Database](#Database)**<br>
-**[Statement](#Statement)**<br>
-**[Model](#Model)**<br>
-**[JSON](#JSON)**<br>
-**[Multiple Databases](#Multiple_Databases)**
-
-### Database
-Initialization
-
+### Initialization
 ```php
 use aphp\XPDO\Database;
 
@@ -107,8 +109,7 @@ $db->SQLiteInit('sampleBase-temp.sqlite');
 // --
 $db->MySQLInit($user, $password, $database, 'localhost');
 ```
-
-Logger
+### Logger
 ```php
 use aphp\logger\FileLogger;
 
@@ -118,15 +119,12 @@ $logger->startLog();
 
 $db->setLogger( $logger );
 ```
+</p>
+</details>
+<details><summary><b>&#x1F535; Statement</b></summary>
+<p>
 
-**[Database](#Database)**<br>
-**[Statement](#Statement)**<br>
-**[Model](#Model)**<br>
-**[JSON](#JSON)**<br>
-**[Multiple Databases](#Multiple_Databases)**
-
-### Statement
-Prepare
+### Prepare
 ```php
 use aphp\XPDO\Database;
 
@@ -134,18 +132,18 @@ $db = Database::getInstance();
 $statement1 = $db->prepare("SELECT `name` FROM user WHERE id = ?");
 $statement2 = $db->prepare("SELECT `name` FROM user WHERE id = :idvalue");
 ```
-Bind values
+### Bind values
 ```php
 $statement1->bindValues( [ 1 ] );
 
 $statement2->bindNamedValue( 'idvalue', 1 );
 $statement2->bindNamedValues( [ 'idvalue' => 1 ] );
 ```
-Execute
+### Execute
 ```php
 $statement1->execute(); // for UPDATE or INSERT queries
 ```
-Prepare-Bind-Execute
+### Prepare-Bind-Execute
 ```php
 use aphp\XPDO\Database;
 
@@ -154,39 +152,33 @@ $db->prepare("INSERT INTO user ( `name`, `email`, `gender`, `age` ) VALUES ( :na
    ->bindNamedValue( 'name', 'Donella Nelson' )
    ->execute();
 ```
-Fetch all - select all rows
+### Fetch all - select all rows
 ```php
 $result = $db->prepare("SELECT * FROM user")->fetchAll();
 print_r($result); // array[row][field]
 ```
-Fetch line - select first row
+### Fetch line - select first row
 ```php
 $result = $db->prepare("SELECT * FROM user")->fetchLine();
 print_r($result); // array[field]
 ```
-Fetch One - select first value in first row
+### Fetch One - select first value in first row
 ```php
 $result = $db->prepare("SELECT * FROM user")->fetchOne();
 print_r($result); // value
 ```
 ### Statement-Empty
-If fetch results is empty, that can be checked by `IF` operator
+If fetch results is empty, that can be checked by `IF` operator<br>
+Empty value is configured by `ModelConfig::$fetchAll_nullValue = [];`<br>
 ```php
 $result = $db->prepare("SELECT * FROM user WHERE id = 2304")->fetchAll();
-if ($result) {
+if (count($result) != 0) {
 	print_r($result); // array[row][field]
 } else {
-	var_dump($result); // NULL
-}
-
-// one line syntax example
-if ($result = $db->prepare("SELECT * FROM user WHERE id = 2304")->fetchAll()) {
-	print_r($result); // array[row][field]
-} else {
-	var_dump($result); // NULL
+	var_dump($result); // []
 }
 ```
-Empty fetch line  
+### Empty fetch line
 ```php
 if ($result = $db->prepare("SELECT * FROM user WHERE id = 2304")->fetchLine()) {
 	print_r($result); // array[field]
@@ -194,7 +186,7 @@ if ($result = $db->prepare("SELECT * FROM user WHERE id = 2304")->fetchLine()) {
 	var_dump($result); // NULL
 }
 ```
-Empty fetch one
+### Empty fetch one
 ```php
 if ($result = $db->prepare("SELECT * FROM user WHERE id = 2304")->fetchOne()) {
 	print_r($result); // value
@@ -223,10 +215,7 @@ $statement->bindNamedBlob('blob', $fp);
 $statement->bindNamedValue('id', 2);
 $statement->execute();
 ```
-### Statement-Object
-
-Fetch object 
-
+### Fetch object
 ```php
 class User_object {
 	public $id;
@@ -257,9 +246,7 @@ User_object Object
     [param2_v] => p2
 )
 ```
-
-Fetch All object
-
+### Fetch All objects
 ```php
 $statement = $db->prepare("SELECT `id`, `name`, `email` FROM user");
 $objects = $statement->fetchAllObjects(User_object::class, [ 'p1', 'p2' ]);
@@ -267,30 +254,60 @@ $objects = $statement->fetchAllObjects(User_object::class, [ 'p1', 'p2' ]);
 print_r($objects);
 // $objects = array [objects]
 ```
+</p>
+</details>
+<details><summary><b>&#x1F535; Statement - cache</b></summary>
+<p>
+Database supported the cached results for statements.<br>
+To enable this feature use this code:
 
-**[Database](#Database)**<br>
-**[Statement](#Statement)**<br>
-**[Model](#Model)**<br>
-**[JSON](#JSON)**<br>
-**[Multiple Databases](#Multiple_Databases)**
+```php
+$db->setFetchCacheEnabled(true);
+```
 
-### Model
+All next `SELECT` queries are cached, and not execute twice.
+This feature is useful with relation models, for increase the performance of virtual fields.
 
-new Model
+```php
+$statement = $db->prepare('SELECT * FROM user WHERE id = 1');
+$statement->__objectID = 'statementID';
+$user = $statement->fetchLine();
+//
+$statement2 = $db->prepare('SELECT * FROM user WHERE id = 1');
+$user = $statement2->fetchLine(); // load from cache
 
+//
+var_dump($statement == $statement2); // true, cache enabled, statement instance not create twice
+var_dump($statement2->__objectID == 'statementID');  // true
+var_dump($statement2->_cached == true);  // true, cache feature is enabled
+```
+
+If `UPDATE` , `INSERT` or any non `SELECT` query executed, then cache will reset.<br>
+For manual reset use:
+```php
+$db->resetFetchCache();
+```
+For disable caching use:
+```php
+$db->setFetchCacheEnabled(false);
+```
+</p>
+</details>
+<details><summary><b>&#x1F535; Model</b></summary>
+<p>
+
+### new Model
 ```php
 use aphp\XPDO\Database;
 use aphp\XPDO\Model;
 
 class user extends Model {
-	
-}
 
+}
 
 $user = user::newModel();
 ```
-
-new Model - visible fields
+### new Model - visible fields
 ```php
 class user extends Model {
 	public $id;
@@ -303,34 +320,31 @@ class user extends Model {
 
 $user = user::newModel();
 ```
-new Model - key field
+### new Model - key field
 ```php
 class user extends Model {
 	static function keyField() {
 		return 'id';
 	}
 }
-
 $user = user::newModel();
 ```
-new Model - table name
+### new Model - table name
 ```php
 class user extends Model {
 	static function tableName() {
 		return 'user';
 	}
 }
-
 $user = user::newModel();
 ```
-new Model - key field auto increment
+### new Model - key field auto increment
 ```php
 class user extends Model {
 	static function keyFieldAutoIncrement() {
 		return true;
 	}
 }
-
 $user = user::newModel();
 ```
 ### Model - Save
@@ -341,7 +355,7 @@ use aphp\XPDO\Database;
 use aphp\XPDO\Model;
 
 class user extends Model {
-	
+
 }
 
 $user = user::newModel();
@@ -371,7 +385,7 @@ Load with field and columns 'name' , 'email' (optimized)
 $user = user::loadWithField('name', 'userName', ['name', 'email']);
 ```
 ### Model - Select
-Using select queries for loading models 
+Using select queries for loading models
 ```php
 $statement = $db->prepare('SELECT * FROM user');
 $object = user::loadWithStatement($statement);
@@ -410,14 +424,12 @@ Delete model from database, optimizing
 $user = user::loadWithId(1, [ user::keyField() ]);
 $user->delete();
 ```
-**[Database](#Database)**<br>
-**[Statement](#Statement)**<br>
-**[Model](#Model)**<br>
-**[JSON](#JSON)**<br>
-**[Multiple Databases](#Multiple_Databases)**
-### JSON
+</p>
+</details>
+<details><summary><b>&#x1F535; JSON</b></summary>
+<p>
+JSON bind detection is enabled by default.
 
-Json bind detection is enabled by default.
 ```php
 Utils::$_jsonBindDetection = true;
 ```
@@ -447,15 +459,68 @@ class user extends Model {
 	}
 }
 ```
-**[Database](#Database)**<br>
-**[Statement](#Statement)**<br>
-**[Model](#Model)**<br>
-**[JSON](#JSON)**<br>
-**[Multiple Databases](#Multiple_Databases)**
-### Multiple_Databases
+</p>
+</details>
+<details><summary><b>&#x1F535; DateTime</b></summary>
+<p>
+DateTime class is used to store and edit the date time.
 
+```php
+class DateTime
+{
+	public function isTimeText($text);
+	public function isDateText($text);
+	public function isDateTimeText($text);
+
+	public function setText($text);
+	public function getText();
+
+	// dt = dateTime, d = date, t = time
+	public function setNow($dt = null);
+	public function setTimestamp(/* int */ $timestamp, $dt = null);
+
+	public function getDate();
+	public function getTime();
+	public function getDT();
+
+	public function getPHPDateTime(); // \DateTime
+	public function getTimestamp(); // int
+}
+```
+Bind date field value (INSERT, UPDATE).
+```php
+use aphp\XPDO\DateTime;
+// example of dateTime, date and time formats
+$dateTime = new DateTime('2019-11-22 14:55:59');
+$date = new DateTime('2019-11-22');
+$time = new DateTime('14:55:59');
+// api with bindNamedValue
+$statement->bindNamedValue('dateTime', $dateTime);
+// api with bindValues
+$statement->bindValues([ $dateTime, 'otherFieldValue', 'otherFieldValue' ]);
+```
+`SELECT` queries need to call `$statement->setDateColumns` before fetching.
+```php
+$statement->setDateColumns([ 'v_date' ]);
+$data = $statement->fetchLine();
+print_r($data['v_date']); // will see aphp\XPDO\DateTime
+```
+Models using `dateFields` to set DateTime fields
+```php
+class timeTable extends Model {
+	static function dateFields() {
+		return ['v_dateTime', 'v_date', 'v_time'];
+	}
+}
+```
+See [example05.php](example/example05.php) for more practice.
+</p>
+</details>
+<details><summary><b>&#x1F535; Multiple Databases</b></summary>
+<p>
 By the default used 1 instance of database.<br>
 To create `multiple` instances use sample code:
+
 ```php
 class DBStatic {
 	static $db1;
@@ -482,6 +547,229 @@ class User_db02 extends Model {
 	}
 }
 ```
+</p>
+</details>
+<details><summary><b>&#x1F535; Relation Class</b></summary>
+<p>
+
+```php
+class Relation {
+	public function toManyAdd($name, Model $relationModel);
+	public function toManyAddAll($name, $relationModels); // name, [ Model ]
+	public function toManyRemove($name, Model $relationModel);
+	public function toManyRemoveAll($name);
+	public function reset(); // reset property cache
+
+	public function setFields(/*Array*/ $fields); // -> $this
+	public function orderBy($field, $asc = true); // -> $this
+}
+```
+This class is created automatically while runtime calling the relations.
+```php
+// Read
+  $object = $model->relation()->%nameToOne%;
+  $objects = $model->relation()->%nameToMany%;
+  $objects = $model->relation()->%nameManyToMany%;
+// Write
+  $model->relation()->%nameToOne% = $object;
+// toMany write
+  $model->relation()->toManyAdd('%nameToMany%', $object);
+  $model->relation()->toManyAdd('%nameManyToMany%', $object);
+
+  $model->relation()->toManyAddAll('%nameToMany%', $objects);
+  $model->relation()->toManyAddAll('%nameManyToMany%', $objects);
+
+  $model->relation()->toManyRemove('%nameToMany%', $object);
+  $model->relation()->toManyRemove('%nameManyToMany%', $object);
+
+  $model->relation()->toManyRemoveAll('%nameToMany%');
+  $model->relation()->toManyRemoveAll('%nameManyToMany%');
+```
+Setting load fields or order for relations.
+```php
+// Read , set load fields
+  $object = $model->relation()->setFields(['field1', 'field2'])->%nameToOne%;
+  $objects = $model->relation()->setFields(['field1', 'field2'])->%nameToMany%;
+// Read , set order
+  $objects = $model->relation()->orderBy('field1')->%nameToMany%;
+// Read , set order multiple fields
+  $objects = $model->relation()->
+    orderBy('field1')->orderBy('field2')->
+    %nameToMany%;
+// Read , set order , set fields
+  $objects = $model->relation()->
+   orderBy('field1')->setFields(['field1', 'field2'])->
+   %nameToMany%;
+```
+</p>
+</details>
+<details><summary><b>&#x1F535; Relations</b></summary>
+<p>
+
+### Configure
+
+Relations are configured by static method `relations()`.
+```
+// to one
+this->%field% ** %class%->%id%
+// to many
+this->%id% *-** %class%->%field%
+```
+Many to many used 2 rules.
+```
+this->%id% *-** %MiddleClass%->%field1%,
+%MiddleClass%->%field2% ** %class%->%id%
+```
+Class namespaces by default is autodetected.
+```php
+// autodetecting
+ModelConfig::modelClass_relation_namespace = 'auto';
+// set the namespace models
+ModelConfig::modelClass_relation_namespace = 'RT\Test\Sample';
+```
+Full namespace is allowed to set in rules.
+```
+this->%field% ** RT\Test\Sample\%class%->%id%
+```
+
+### Syntax to-one
+
+![toOne](images/001.png)
+
+```php
+class Category extends Model { }
+
+class Book extends Model {
+  static function relations() {
+    return [
+      'category' => 'this->category_id ** Category->id'
+    ];
+  }
+}
+```
+Read
+```php
+$book = Book::loadWithField('name', 'Role of Religion');
+$category = $book->relation()->category; // Category OR null
+```
+Write
+```php
+$book = Book::loadWithField('name', 'Role of Religion');
+$category = Category::loadWithField('name', 'capitalism');
+$book->relation()->category = $category;
+```
+Null
+```php
+$book->relation()->category = null;
+```
+### Syntax_to-many
+
+![toMany](images/002.png)
+
+```php
+class Category extends Model {
+  static function relations() {
+    return [
+      'books' => 'this->id *-** Book->category_id'
+    ];
+  }
+}
+
+class Book extends Model { }
+```
+Read
+```php
+$category = Category::loadWithField('name', 'capitalism');
+$books = $category->relation()->books; // [ Book ] OR [ ]
+```
+Write
+```php
+$category = Category::loadWithField('name', 'capitalism');
+$book = Book::loadWithField('name', 'Motherhood');
+$category->relation()->toManyAdd('books', $book);
+```
+Null
+```php
+$category = Category::loadWithField('name', 'capitalism');
+// self book
+$book1 = $books = $category->relation()->books[0];
+$category->relation()->toManyRemove('books', $book1);
+// book from database
+$book2 = Book::loadWithField('name', 'Motherhood');
+$category->relation()->toManyRemove('books', $book2);
+// all
+$category->relation()->toManyRemoveAll('books');
+```
+### Syntax many to many
+
+![manyToMany](images/003.png)
+
+```php
+class Book extends Model {
+  static function relations() {
+    return [
+      'tags' => [
+        'this->id *-** TagBook->book_id',
+        'TagBook->tag_id ** Tag->id'
+      ]
+    ];
+  }
+}
+class Tag extends Model {
+  static function relations() {
+    return [
+      'books' => [
+        'this->id *-** TagBook->tag_id',
+        'TagBook->book_id ** Book->id'
+      ]
+    ];
+  }
+}
+class TagBook extends Model {
+  static function keyField() {
+    return null; // optional, need testing for cases
+  }
+}
+```
+Api for `many-to-many` relations is same as `to-many`.
+
+**[Syntax_to-many](###Syntax_to-many)**
+
+Read (like toMany)
+```php
+$book = Book::loadWithField('name', 'Motherhood');
+$tags = $book->relation()->tags; // [ Tag ] OR [ ]
+```
+</p>
+</details>
+<details><summary><b>&#x1F535; Relation magic methods</b></summary>
+<p>
+
+Relation allows to use magic methods for model.<br>
+The magic methods are not using `$model->relation()` syntax for shorter code.<br>
+Syntax:
+```php
+$relationModel = $model->%relationName%;
+
+$model->%relationName% = $relationModel;
+
+$model->toManyAdd('%relationName%', $relationModel);
+$model->toManyAddAll('%relationName%', $relationModels);
+$model->toManyRemove('%relationName%', $relationModel);
+$model->toManyRemoveAll('%relationName%');
+
+$relationModels = $model->relation_orderBy('%field%', true|false)->%relationName%;
+```
+</p>
+</details>
+<details><summary><b>&#x1F535; Relation recommendations</b></summary>
+<p>
+
+* Write relation action performs <b>saving</b> model <b>immediately</b>.
+* Use Database::transactionBegin() to optimize the relations writing.
+* Use logger for debug, and see SQL queries.
+</p>
+</details>
 
 ## Test running
 
@@ -492,8 +780,10 @@ class User_db02 extends Model {
 
 On linux use *.sh files like *.bat files
 
-## Useful links: 
-* Cmd windows
+<details><summary><b>&#x1F535; Useful links</b></summary>
+<p>
+
+* CMD windows
 	* [WindowsPathEditor](https://rix0rrr.github.io/WindowsPathEditor/)
 	* [conemu](https://conemu.github.io/)
 * PHP in CMD
@@ -505,6 +795,9 @@ On linux use *.sh files like *.bat files
 * Git client
 	* [git](https://gitforwindows.org/)
 	* [smartgit](https://www.syntevo.com/smartgit/)
+
+</p>
+</details>
 
 ## More features
 For more features:

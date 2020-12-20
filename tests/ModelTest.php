@@ -3,6 +3,7 @@
 use aphp\XPDO\Database;
 use aphp\XPDO\Model;
 use aphp\XPDO\Utils;
+use aphp\XPDO\DateTime;
 
 class user extends Model {
 	public $id;
@@ -49,12 +50,21 @@ class user_json extends Model {
 	}
 }
 
+class Time_model extends Model {
+	static function tableName() {
+		return 'timeTable';
+	}
+	static function dateFields() {
+		return [ 'v_dateTime', 'v_date', 'v_time' ];
+	}
+}
+
 // ---
 
 class ModelTest extends Base_TestCase {
 	// STATIC
 	public static function setUpBeforeClass() {
-
+		Utils::$_jsonBindDetection = true;
 	}
 
 	public static function tearDownAfterClass() {
@@ -150,8 +160,8 @@ class ModelTest extends Base_TestCase {
 		try {
 			$obj->save();
 			$this->assertTrue( false );
-		} catch (aphp\XPDO\Model_Exception $ex) {
-			$this->assertTrue( true );
+		} catch (aphp\XPDO\XPDOException $ex) {
+			$this->assertContains('keyFieldIsNull', $ex->getMessage());
 		}
 	}
 	
@@ -217,8 +227,8 @@ class ModelTest extends Base_TestCase {
 		try {
 			$obj2->save();
 			$this->assertTrue( false );
-		} catch (aphp\XPDO\Model_Exception $e) {
-			$this->assertTrue( true );
+		} catch (aphp\XPDO\XPDOException $ex) {
+			$this->assertContains('emptyUpdateFields', $ex->getMessage());
 		}
 	}
 	
@@ -234,5 +244,28 @@ class ModelTest extends Base_TestCase {
 		$obj2 = user_json::loadWithField('name', 'user_json01');
 		
 		$this->assertEquals( $json, $obj2->email);
+	}
+
+	public function test_dateTime() {
+		$obj = Time_model::newModel();
+		$obj->name = 'model_time001';
+		$obj->v_dateTime = '2019-11-22 14:55:59';
+		$obj->v_date = '2019-11-11';
+		$obj->v_time = new DateTime('14:55:20');
+		$obj->save();
+		// --
+		$obj2 = Time_model::loadWithField('name', 'model_time001');
+		$this->assertTrue( is_a($obj2, Time_model::class) );
+		$this->assertTrue( is_a($obj2->v_dateTime, DateTime::class) );
+		$this->assertTrue( is_a($obj2->v_date, DateTime::class) );
+		$this->assertTrue( is_a($obj2->v_time, DateTime::class) );
+		$this->assertTrue( $obj2->v_time->getText() == '14:55:20' );
+		$this->assertTrue( $obj2->v_dateTime->getText() == '2019-11-22 14:55:59' );
+		$obj2->v_time->setText('00:00:20');
+		$obj2->save();
+		// --
+		$obj3 = Time_model::loadWithField('name', 'model_time001');
+		$this->assertTrue( is_a($obj3, Time_model::class) );
+		$this->assertTrue( $obj2->v_time->getText() == '00:00:20' );
 	}
 }
