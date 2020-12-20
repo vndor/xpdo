@@ -14,7 +14,7 @@ Supporting: MySQL, SQLite.
 ## Installation
 PHP5.6 , PHP7.0+
 
-`composer require aphp/xpdo`
+`composer require vndor/xpdo`
 
 ## Features
 
@@ -43,8 +43,8 @@ Sample code:
 <?php
 require 'vendor/autoload.php';
 
-use aphp\XPDO\Database;
-use aphp\XPDO\Model;
+use vndor\XPDO\Database;
+use vndor\XPDO\Model;
 
 class user extends Model {
 	//  uncomment this to get more options
@@ -102,7 +102,7 @@ user Object
 
 ### Initialization
 ```php
-use aphp\XPDO\Database;
+use vndor\XPDO\Database;
 
 $db = Database::getInstance();
 $db->SQLiteInit('sampleBase-temp.sqlite');
@@ -111,7 +111,7 @@ $db->MySQLInit($user, $password, $database, 'localhost');
 ```
 ### Logger
 ```php
-use aphp\logger\FileLogger;
+use vndor\logger\FileLogger;
 
 $logger = FileLogger::getInstance();
 $logger->configure('logs/log');
@@ -126,7 +126,7 @@ $db->setLogger( $logger );
 
 ### Prepare
 ```php
-use aphp\XPDO\Database;
+use vndor\XPDO\Database;
 
 $db = Database::getInstance();
 $statement1 = $db->prepare("SELECT `name` FROM user WHERE id = ?");
@@ -145,7 +145,7 @@ $statement1->execute(); // for UPDATE or INSERT queries
 ```
 ### Prepare-Bind-Execute
 ```php
-use aphp\XPDO\Database;
+use vndor\XPDO\Database;
 
 $db = Database::getInstance();
 $db->prepare("INSERT INTO user ( `name`, `email`, `gender`, `age` ) VALUES ( :name, 'email2', 2, 1.5 )")
@@ -298,8 +298,8 @@ $db->setFetchCacheEnabled(false);
 
 ### new Model
 ```php
-use aphp\XPDO\Database;
-use aphp\XPDO\Model;
+use vndor\XPDO\Database;
+use vndor\XPDO\Model;
 
 class user extends Model {
 
@@ -351,8 +351,8 @@ $user = user::newModel();
 The insert query performs automatically.
 
 ```php
-use aphp\XPDO\Database;
-use aphp\XPDO\Model;
+use vndor\XPDO\Database;
+use vndor\XPDO\Model;
 
 class user extends Model {
 
@@ -489,7 +489,7 @@ class DateTime
 ```
 Bind date field value (INSERT, UPDATE).
 ```php
-use aphp\XPDO\DateTime;
+use vndor\XPDO\DateTime;
 // example of dateTime, date and time formats
 $dateTime = new DateTime('2019-11-22 14:55:59');
 $date = new DateTime('2019-11-22');
@@ -503,7 +503,7 @@ $statement->bindValues([ $dateTime, 'otherFieldValue', 'otherFieldValue' ]);
 ```php
 $statement->setDateColumns([ 'v_date' ]);
 $data = $statement->fetchLine();
-print_r($data['v_date']); // will see aphp\XPDO\DateTime
+print_r($data['v_date']); // will see vndor\XPDO\DateTime
 ```
 Models using `dateFields` to set DateTime fields
 ```php

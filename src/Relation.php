@@ -1,5 +1,5 @@
 <?php
-namespace aphp\XPDO;
+namespace vndor\XPDO;
 
 abstract class RelationH {
 	public $_propertyCache; // = ModelConfig::$relationDefaultPropertyCache;

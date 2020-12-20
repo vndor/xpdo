@@ -1,6 +1,6 @@
 <?php
 
-namespace aphp\XPDO;
+namespace vndor\XPDO;
 
 /*
 Utils::jsonEncode($value)

@@ -1,5 +1,5 @@
 {
-	"name": "aphp/xpdo",
+	"name": "vndor/xpdo",
 	"description": "Simple PHP PDO Wrapper for MySQL, for SQLite. ORM (Object Relational Mapping) supported for keys fields.",
 	"keywords": [
 		"PHP", "pdo", "mysql", "sqlite", "ormlite", "orm", "orm-library", "flyweight", "simple", "database"
@@ -9,14 +9,14 @@
 	"minimum-stability": "dev",
 	"require": {
 		"psr/log": "~1.0",
-		"aphp/foundation": "~1.0.0|~2.0.0"
+		"vndor/foundation": "~1.0.0|~2.0.0"
 	},
 	"require-dev": {
-		"aphp/logger": "~2.0.0"
+		"vndor/logger": "~2.0.0"
 	},
 	"autoload": {
 		"psr-4": {
-			"aphp\\XPDO\\" : "src/"
+			"vndor\\XPDO\\" : "src/"
 		}
 	}
 }

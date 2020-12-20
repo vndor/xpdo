@@ -1,6 +1,6 @@
 <?php
 
-namespace aphp\XPDO;
+namespace vndor\XPDO;
 
 # ------------------------------------
 # Header
@@ -8,7 +8,7 @@ namespace aphp\XPDO;
 
 class ModelConfig {
 	static $keyField = 'id';
-	static $relationClass = '\aphp\XPDO\Relation';
+	static $relationClass = '\vndor\XPDO\Relation';
 	static $relationDefaultPropertyCache = true;
 	static $relationMagicMethods = true;
 	static $modelClass_relation_namespace = 'auto';

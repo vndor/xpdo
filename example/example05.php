@@ -2,9 +2,9 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use aphp\XPDO\Database;
-use aphp\XPDO\Model;
-use aphp\XPDO\DateTime;
+use vndor\XPDO\Database;
+use vndor\XPDO\Model;
+use vndor\XPDO\DateTime;
 
 class timeTable extends Model {
 	static function dateFields() {

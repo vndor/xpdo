@@ -1,6 +1,6 @@
 <?php
 
-namespace aphp\XPDO;
+namespace vndor\XPDO;
 
 # ------------------------------------
 # Header
@@ -10,7 +10,7 @@ abstract class DatabaseH {
 	abstract public function SQLiteInit($fileName);
 	abstract public function MySQLInit($user, $password, $dbname, $host = 'localhost');
 
-	abstract public function prepare($queryString); // aphp\XPDO\Statement;
+	abstract public function prepare($queryString); // vndor\XPDO\Statement;
 	abstract public function exec($queryString); // int
 	abstract public function fetchLastId($table, $idColumn); // value OR null ??
 
@@ -38,7 +38,7 @@ abstract class DatabaseH {
 # ------------------------------------
 
 class Database extends DatabaseH {
-	use \aphp\Foundation\TraitSingleton; // trait
+	use \vndor\Foundation\TraitSingleton; // trait
 	use \Psr\Log\LoggerAwareTrait; // trait
 
 	// PROTECTED

@@ -1,5 +1,5 @@
 <?php
-use aphp\XPDO\DateTime;
+use vndor\XPDO\DateTime;
 
 class DatetimeTest extends Base_TestCase {
 
@@ -51,7 +51,7 @@ class DatetimeTest extends Base_TestCase {
 		try {
 			$d->setTimestamp('string', 'dt');
 			$this->assertTrue( false );
-		} catch (aphp\XPDO\XPDOException $ex) {
+		} catch (vndor\XPDO\XPDOException $ex) {
 			$this->assertContains('invalidTimestamp', $ex->getMessage());
 		}
 	}

@@ -3,9 +3,9 @@ namespace example01\wqdqwdw\asdad\adsw;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use aphp\XPDO\Database;
-use aphp\XPDO\Model;
-use aphp\Logger\FileLogger;
+use vndor\XPDO\Database;
+use vndor\XPDO\Model;
+use vndor\Logger\FileLogger;
 
 class user extends Model {
 	public $id;

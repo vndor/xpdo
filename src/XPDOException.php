@@ -1,6 +1,6 @@
 <?php 
-namespace aphp\XPDO;
-use aphp\Foundation\AException;
+namespace vndor\XPDO;
+use vndor\Foundation\AException;
 
 class XPDOException extends AException {
 	// Utils_Exception

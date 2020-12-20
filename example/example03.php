@@ -2,8 +2,8 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use aphp\XPDO\Database;
-use aphp\XPDO\Model;
+use vndor\XPDO\Database;
+use vndor\XPDO\Model;
 
 class user extends Model {
 	/*

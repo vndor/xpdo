@@ -1,6 +1,6 @@
 <?php
 
-namespace aphp\XPDO;
+namespace vndor\XPDO;
 
 # ------------------------------------
 # Header
@@ -13,7 +13,7 @@ abstract class StatementH {
 
 	public $_pdoStatement; // PDOStatement
 	public $_query;
-	public $_database; // aphp\XPDO\Database
+	public $_database; // vndor\XPDO\Database
 	public $_params = [];
 	protected $_jsonColumns = [];
 	protected $_dateColumns = [];

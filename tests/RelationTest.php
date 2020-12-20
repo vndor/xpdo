@@ -1,10 +1,10 @@
 <?php
 namespace RT\Test\Sample;
-use aphp\XPDO\Database;
-use aphp\XPDO\Model;
-use aphp\XPDO\ModelConfig;
-use aphp\XPDO\Utils;
-use aphp\XPDO\XPDOException;
+use vndor\XPDO\Database;
+use vndor\XPDO\Model;
+use vndor\XPDO\ModelConfig;
+use vndor\XPDO\Utils;
+use vndor\XPDO\XPDOException;
 
 class Category extends Model {
 	static function tableName() {

@@ -1,9 +1,9 @@
 <?php 
 
-use aphp\XPDO\Database;
-use aphp\XPDO\Model;
-use aphp\XPDO\Utils;
-use aphp\XPDO\DateTime;
+use vndor\XPDO\Database;
+use vndor\XPDO\Model;
+use vndor\XPDO\Utils;
+use vndor\XPDO\DateTime;
 
 class user extends Model {
 	public $id;
@@ -160,7 +160,7 @@ class ModelTest extends Base_TestCase {
 		try {
 			$obj->save();
 			$this->assertTrue( false );
-		} catch (aphp\XPDO\XPDOException $ex) {
+		} catch (vndor\XPDO\XPDOException $ex) {
 			$this->assertContains('keyFieldIsNull', $ex->getMessage());
 		}
 	}
@@ -227,7 +227,7 @@ class ModelTest extends Base_TestCase {
 		try {
 			$obj2->save();
 			$this->assertTrue( false );
-		} catch (aphp\XPDO\XPDOException $ex) {
+		} catch (vndor\XPDO\XPDOException $ex) {
 			$this->assertContains('emptyUpdateFields', $ex->getMessage());
 		}
 	}

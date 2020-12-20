@@ -1,5 +1,5 @@
 <?php
-namespace aphp\XPDO;
+namespace vndor\XPDO;
 
 // https://www.sqlite.org/lang_datefunc.html
 // YYYY-MM-DD

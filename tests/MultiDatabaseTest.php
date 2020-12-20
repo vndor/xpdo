@@ -1,7 +1,7 @@
 <?php
 
-use aphp\XPDO\Database;
-use aphp\XPDO\Model;
+use vndor\XPDO\Database;
+use vndor\XPDO\Model;
 
 class User_db01 extends Model {
 	static function tableName() {
@@ -31,12 +31,12 @@ class MultiDatabaseTest extends Base_TestCase {
 		MultiDatabaseTest::$db01 = new Database;
 		MultiDatabaseTest::$db01->SQLiteInit(__DIR__ . '/db/sampleBase-temp01.sqlite');
 
-		MultiDatabaseTest::$db01->setLogger( aphp\Logger\FileLogger::getInstance() );
+		MultiDatabaseTest::$db01->setLogger( vndor\Logger\FileLogger::getInstance() );
 
 		MultiDatabaseTest::$db02 = new Database;
 		MultiDatabaseTest::$db02->SQLiteInit(__DIR__ . '/db/sampleBase-temp02.sqlite');
 
-		MultiDatabaseTest::$db02->setLogger( aphp\Logger\FileLogger::getInstance() );
+		MultiDatabaseTest::$db02->setLogger( vndor\Logger\FileLogger::getInstance() );
 	}
 
 	public static function tearDownAfterClass() {

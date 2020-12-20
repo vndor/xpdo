@@ -18,7 +18,7 @@
 
 ## 1.0.13 - 2019-09-09
 
-* Updated aphp/foundation to 2.0.
+* Updated vndor/foundation to 2.0.
 * Refactored the exceptions code.
 
 ## 1.0.12 - 2019-08-17
@@ -47,7 +47,7 @@
 ## 1.0.4 - 2019-04-23
 
 * Improved saving fields logic.
-* Added aphp/logger context support.
+* Added vndor/logger context support.
 * Added namespace detection.
 
 ## 1.0.0 - 2019-03-27

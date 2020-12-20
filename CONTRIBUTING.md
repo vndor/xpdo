@@ -1,6 +1,6 @@
 ## Contributing
 
-Hi there! Thanks for considering a contribution to aphp/xpdo. We'd be glad to have your help with this project!
+Hi there! Thanks for considering a contribution to vndor/xpdo. We'd be glad to have your help with this project!
 
 Here are a few guidelines to follow when preparing your contribution or creating an issue.
 
