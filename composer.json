@@ -9,7 +9,7 @@
 	"minimum-stability": "dev",
 	"require": {
 		"psr/log": "~1.0",
-		"vndor/foundation": "~1.0.0|~2.0.0"
+		"vndor/foundation": "dev-master"
 	},
 	"require-dev": {
 		"vndor/logger": "~2.0.0"
